@@ -1,118 +1,73 @@
-# 3.3.0
 
- - Support EventTarget emitters in `events.once` from Node.js 12.11.0.
+2.2.1 / 2015-11-05
+==================
 
-   Now you can use the `events.once` function with objects that implement the EventTarget interface. This interface is used widely in
-   the DOM and other web APIs.
+  * bump extend and void-elements (@shinnn, #1)
 
-   ```js
-   var events = require('events');
-   var assert = require('assert');
+2.2.0 / 2015-02-13
+==================
 
-   async function connect() {
-     var ws = new WebSocket('wss://example.com');
-     await events.once(ws, 'open');
-     assert(ws.readyState === WebSocket.OPEN);
-   }
+  * add support for passing `encode()` options in to `serializeAttribute()` and `serializeTextNode()`
 
-   async function onClick() {
-     await events.once(document.body, 'click');
-     alert('you clicked the page!');
-   }
-   ```
+2.1.0 / 2015-02-10
+==================
 
-# 3.2.0
+  * if `e.detail.serialize` is set and the event is cancelled, still use the `e.detail.serialize` value
+  * attempting to get 100% test code coverage
+  * package: allow any "zuul" v1
+  * test: add HTML5 Doctype test, for 100% test code coverage!
+  * test: remove `console.log()` call
 
- - Add `events.once` from Node.js 11.13.0.
+2.0.1 / 2015-02-03
+==================
 
-   To use this function, Promises must be supported in the environment. Use a polyfill like `es6-promise` if you support older browsers.
+  * index: support Nodes with children for `e.detail.serialize`
 
-# 3.1.0 (2020-01-08)
+2.0.0 / 2015-02-03
+==================
 
-`events` now matches the Node.js 11.12.0 API.
+  * README: update for `serializeTarget`
+  * index: emit the "serialize" event on the node that we know is in the DOM
 
-  - pass through return value in wrapped `emitter.once()` listeners
+1.2.1 / 2015-02-03
+==================
 
-    Now, this works:
-    ```js
-    emitter.once('myevent', function () { return 1; });
-    var listener = emitter.rawListeners('myevent')[0]
-    assert(listener() === 1);
-    ```
-    Previously, `listener()` would return undefined regardless of the implementation.
+  * fix one-time callback functions on NodeLists / Arrays
+  * README: fix weird spacing
+  * README: add "inspect" example to readme
 
-    Ported from https://github.com/nodejs/node/commit/acc506c2d2771dab8d7bba6d3452bc5180dff7cf
+1.2.0 / 2015-02-02
+==================
 
-  - Reduce code duplication in listener type check ([#67](https://github.com/Gozala/events/pull/67) by [@friederbluemle](https://github.com/friederbluemle)).
-  - Improve `emitter.once()` performance in some engines
+  * add support for one-time "serialize" callback functions
+  * add support for a "context" argument
+  * index: make `serializeDoctype()` more readable
+  * README: fix typo in example output
+  * README: better description
 
-# 3.0.0 (2018-05-25)
+1.1.0 / 2015-01-16
+==================
 
-**This version drops support for IE8.** `events` no longer includes polyfills
-for ES5 features. If you need to support older environments, use an ES5 shim
-like [es5-shim](https://npmjs.com/package/es5-shim). Both the shim and sham
-versions of es5-shim are necessary.
+  * add support for Comment, Document, Doctype, DocumentFragment and NodeList types to be serialized
+  * add .travis.yml file
+  * add Makefile for zuul tests
+  * add README.md file
+  * index: run `e.detail.serialize` through all the serialize() logic
+  * index: use += operator for String concatentation (faster)
+  * index: use `require('ent/encode')` syntax
+  * package: update "ent" to v2.2.0
+  * package: rename to "dom-serialize"
+  * test: add Array serialize test
 
-  - Update to events code from Node.js 10.x
-    - (semver major) Adds `off()` method
-  - Port more tests from Node.js
-  - Switch browser tests to airtap, making things more reliable
+1.0.0 / 2015-01-15
+==================
 
-# 2.1.0 (2018-05-25)
-
-  - add Emitter#rawListeners from Node.js v9.4
-
-# 2.0.0 (2018-02-02)
-
-  - Update to events code from node.js 8.x
-    - Adds `prependListener()` and `prependOnceListener()`
-    - Adds `eventNames()` method
-    - (semver major) Unwrap `once()` listeners in `listeners()`
-  - copy tests from node.js
-
-Note that this version doubles the gzipped size, jumping from 1.1KB to 2.1KB,
-due to new methods and runtime performance improvements. Be aware of that when
-upgrading.
-
-# 1.1.1 (2016-06-22)
-
-  - add more context to errors if they are not instanceof Error
-
-# 1.1.0 (2015-09-29)
-
-  - add Emitter#listerCount (to match node v4 api)
-
-# 1.0.2 (2014-08-28)
-
-  - remove un-reachable code
-  - update devDeps
-
-## 1.0.1 / 2014-05-11
-
-  - check for console.trace before using it
-
-## 1.0.0 / 2013-12-10
-
-  - Update to latest events code from node.js 0.10
-  - copy tests from node.js
-
-## 0.4.0 / 2011-07-03 ##
-
-  - Switching to graphquire@0.8.0
-
-## 0.3.0 / 2011-07-03 ##
-
-  - Switching to URL based module require.
-
-## 0.2.0 / 2011-06-10 ##
-
-  - Simplified package structure.
-  - Graphquire for dependency management.
-
-## 0.1.1 / 2011-05-16 ##
-
-  - Unhandled errors are logged via console.error
-
-## 0.1.0 / 2011-04-22 ##
-
-  - Initial release
+  * index: add support for Nodes to be set on `e.data.serialize`
+  * index: remove redundant `break` statements
+  * test: add `e.detail.serialize` Node and Number tests
+  * test: add "serialize" event tests
+  * test: add initial test cases
+  * package: add "string" as a keyword
+  * package: add "zuul" as a dev dependency
+  * package: use ~ for dep versions
+  * initial commit

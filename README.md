@@ -1,32 +1,81 @@
-# East Asian Width
+dom-serialize
+=============
+### Serializes any DOM node into a String
 
-Get [East Asian Width](http://www.unicode.org/reports/tr11/) from a character.
+[![Sauce Test Status](https://saucelabs.com/browser-matrix/dom-serialize.svg)](https://saucelabs.com/u/dom-serialize)
 
-'F'(Fullwidth), 'H'(Halfwidth), 'W'(Wide), 'Na'(Narrow), 'A'(Ambiguous) or 'N'(Natural).
+[![Build Status](https://travis-ci.org/webmodules/dom-serialize.svg?branch=master)](https://travis-ci.org/webmodules/dom-serialize)
 
-Original Code is [東アジアの文字幅 (East Asian Width) の判定 - 中途](http://d.hatena.ne.jp/takenspc/20111126#1322252878).
+It's like `outerHTML`, but it works with:
 
-## Install
+ * DOM elements
+ * Text nodes
+ * Attributes
+ * Comment nodes
+ * Documents
+ * DocumentFragments
+ * Doctypes
+ * NodeLists / Arrays
 
-    $ npm install eastasianwidth
+For custom serialization logic, a "serialize" event is dispatched on
+every `Node` which event listeners can override the default behavior on by
+setting the `event.detail.serialize` property to a String or other Node.
 
-## Usage
+The "serialize" event bubbles, so it could be a good idea to utilize
+event delegation on a known root node that will be serialized.
+Check the `event.serializeTarget` property to check which `Node` is
+currently being serialized.
 
-    var eaw = require('eastasianwidth');
-    console.log(eaw.eastAsianWidth('￦')) // 'F'
-    console.log(eaw.eastAsianWidth('｡')) // 'H'
-    console.log(eaw.eastAsianWidth('뀀')) // 'W'
-    console.log(eaw.eastAsianWidth('a')) // 'Na'
-    console.log(eaw.eastAsianWidth('①')) // 'A'
-    console.log(eaw.eastAsianWidth('ف')) // 'N'
 
-    console.log(eaw.characterLength('￦')) // 2
-    console.log(eaw.characterLength('｡')) // 1
-    console.log(eaw.characterLength('뀀')) // 2
-    console.log(eaw.characterLength('a')) // 1
-    console.log(eaw.characterLength('①')) // 2
-    console.log(eaw.characterLength('ف')) // 1
+Installation
+------------
 
-    console.log(eaw.length('あいうえお')) // 10
-    console.log(eaw.length('abcdefg')) // 7
-    console.log(eaw.length('￠￦｡ￜㄅ뀀¢⟭a⊙①بف')) // 19
+``` bash
+$ npm install dom-serialize
+```
+
+
+Example
+-------
+
+``` js
+var serialize = require('dom-serialize');
+var node;
+
+// works with Text nodes
+node = document.createTextNode('foo & <bar>');
+console.log(serialize(node));
+
+
+// works with DOM elements
+node = document.createElement('body');
+node.appendChild(document.createElement('strong'));
+node.firstChild.appendChild(document.createTextNode('hello'));
+console.log(serialize(node));
+
+
+// custom "serialize" event
+node.firstChild.addEventListener('serialize', function (event) {
+  event.detail.serialize = 'pwn';
+}, false);
+console.log(serialize(node));
+
+
+// you can also just pass a function in for a one-time serializer
+console.log(serialize(node, function (event) {
+  if (event.serializeTarget === node.firstChild) {
+    // for the first child, output an ellipsis to summarize "content"
+    event.detail.serialze = '…';
+  } else if (event.serializeTarget !== node) {
+    // any other child
+    event.preventDefault();
+  }
+}));
+```
+
+```
+foo &amp; &lt;bar&gt;
+<body><strong>hello</strong></body>
+<body>pwn</body>
+<body>…</body>
+```

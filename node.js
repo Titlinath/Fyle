@@ -1,248 +1,338 @@
+import { ElementType, isTag as isTagRaw } from "domelementtype";
 /**
- * Module dependencies.
+ * This object will be used as the prototype for Nodes when creating a
+ * DOM-Level-1-compliant structure.
  */
-
-var tty = require('tty');
-var util = require('util');
-
-/**
- * This is the Node.js implementation of `debug()`.
- *
- * Expose `debug()` as the module.
- */
-
-exports = module.exports = require('./debug');
-exports.init = init;
-exports.log = log;
-exports.formatArgs = formatArgs;
-exports.save = save;
-exports.load = load;
-exports.useColors = useColors;
-
-/**
- * Colors.
- */
-
-exports.colors = [6, 2, 3, 4, 5, 1];
-
-/**
- * Build up the default `inspectOpts` object from the environment variables.
- *
- *   $ DEBUG_COLORS=no DEBUG_DEPTH=10 DEBUG_SHOW_HIDDEN=enabled node script.js
- */
-
-exports.inspectOpts = Object.keys(process.env).filter(function (key) {
-  return /^debug_/i.test(key);
-}).reduce(function (obj, key) {
-  // camel-case
-  var prop = key
-    .substring(6)
-    .toLowerCase()
-    .replace(/_([a-z])/g, function (_, k) { return k.toUpperCase() });
-
-  // coerce string value into JS value
-  var val = process.env[key];
-  if (/^(yes|on|true|enabled)$/i.test(val)) val = true;
-  else if (/^(no|off|false|disabled)$/i.test(val)) val = false;
-  else if (val === 'null') val = null;
-  else val = Number(val);
-
-  obj[prop] = val;
-  return obj;
-}, {});
-
-/**
- * The file descriptor to write the `debug()` calls to.
- * Set the `DEBUG_FD` env variable to override with another value. i.e.:
- *
- *   $ DEBUG_FD=3 node script.js 3>debug.log
- */
-
-var fd = parseInt(process.env.DEBUG_FD, 10) || 2;
-
-if (1 !== fd && 2 !== fd) {
-  util.deprecate(function(){}, 'except for stderr(2) and stdout(1), any other usage of DEBUG_FD is deprecated. Override debug.log if you want to use a different log function (https://git.io/debug_fd)')()
+export class Node {
+    constructor() {
+        /** Parent of the node */
+        this.parent = null;
+        /** Previous sibling */
+        this.prev = null;
+        /** Next sibling */
+        this.next = null;
+        /** The start index of the node. Requires `withStartIndices` on the handler to be `true. */
+        this.startIndex = null;
+        /** The end index of the node. Requires `withEndIndices` on the handler to be `true. */
+        this.endIndex = null;
+    }
+    // Read-write aliases for properties
+    /**
+     * Same as {@link parent}.
+     * [DOM spec](https://dom.spec.whatwg.org)-compatible alias.
+     */
+    get parentNode() {
+        return this.parent;
+    }
+    set parentNode(parent) {
+        this.parent = parent;
+    }
+    /**
+     * Same as {@link prev}.
+     * [DOM spec](https://dom.spec.whatwg.org)-compatible alias.
+     */
+    get previousSibling() {
+        return this.prev;
+    }
+    set previousSibling(prev) {
+        this.prev = prev;
+    }
+    /**
+     * Same as {@link next}.
+     * [DOM spec](https://dom.spec.whatwg.org)-compatible alias.
+     */
+    get nextSibling() {
+        return this.next;
+    }
+    set nextSibling(next) {
+        this.next = next;
+    }
+    /**
+     * Clone this node, and optionally its children.
+     *
+     * @param recursive Clone child nodes as well.
+     * @returns A clone of the node.
+     */
+    cloneNode(recursive = false) {
+        return cloneNode(this, recursive);
+    }
 }
-
-var stream = 1 === fd ? process.stdout :
-             2 === fd ? process.stderr :
-             createWritableStdioStream(fd);
-
 /**
- * Is stdout a TTY? Colored output is enabled when `true`.
+ * A node that contains some data.
  */
-
-function useColors() {
-  return 'colors' in exports.inspectOpts
-    ? Boolean(exports.inspectOpts.colors)
-    : tty.isatty(fd);
+export class DataNode extends Node {
+    /**
+     * @param data The content of the data node
+     */
+    constructor(data) {
+        super();
+        this.data = data;
+    }
+    /**
+     * Same as {@link data}.
+     * [DOM spec](https://dom.spec.whatwg.org)-compatible alias.
+     */
+    get nodeValue() {
+        return this.data;
+    }
+    set nodeValue(data) {
+        this.data = data;
+    }
 }
-
 /**
- * Map %o to `util.inspect()`, all on a single line.
+ * Text within the document.
  */
-
-exports.formatters.o = function(v) {
-  this.inspectOpts.colors = this.useColors;
-  return util.inspect(v, this.inspectOpts)
-    .split('\n').map(function(str) {
-      return str.trim()
-    }).join(' ');
-};
-
+export class Text extends DataNode {
+    constructor() {
+        super(...arguments);
+        this.type = ElementType.Text;
+    }
+    get nodeType() {
+        return 3;
+    }
+}
 /**
- * Map %o to `util.inspect()`, allowing multiple lines if needed.
+ * Comments within the document.
  */
-
-exports.formatters.O = function(v) {
-  this.inspectOpts.colors = this.useColors;
-  return util.inspect(v, this.inspectOpts);
-};
-
+export class Comment extends DataNode {
+    constructor() {
+        super(...arguments);
+        this.type = ElementType.Comment;
+    }
+    get nodeType() {
+        return 8;
+    }
+}
 /**
- * Adds ANSI color escape codes if enabled.
+ * Processing instructions, including doc types.
+ */
+export class ProcessingInstruction extends DataNode {
+    constructor(name, data) {
+        super(data);
+        this.name = name;
+        this.type = ElementType.Directive;
+    }
+    get nodeType() {
+        return 1;
+    }
+}
+/**
+ * A `Node` that can have children.
+ */
+export class NodeWithChildren extends Node {
+    /**
+     * @param children Children of the node. Only certain node types can have children.
+     */
+    constructor(children) {
+        super();
+        this.children = children;
+    }
+    // Aliases
+    /** First child of the node. */
+    get firstChild() {
+        var _a;
+        return (_a = this.children[0]) !== null && _a !== void 0 ? _a : null;
+    }
+    /** Last child of the node. */
+    get lastChild() {
+        return this.children.length > 0
+            ? this.children[this.children.length - 1]
+            : null;
+    }
+    /**
+     * Same as {@link children}.
+     * [DOM spec](https://dom.spec.whatwg.org)-compatible alias.
+     */
+    get childNodes() {
+        return this.children;
+    }
+    set childNodes(children) {
+        this.children = children;
+    }
+}
+export class CDATA extends NodeWithChildren {
+    constructor() {
+        super(...arguments);
+        this.type = ElementType.CDATA;
+    }
+    get nodeType() {
+        return 4;
+    }
+}
+/**
+ * The root node of the document.
+ */
+export class Document extends NodeWithChildren {
+    constructor() {
+        super(...arguments);
+        this.type = ElementType.Root;
+    }
+    get nodeType() {
+        return 9;
+    }
+}
+/**
+ * An element within the DOM.
+ */
+export class Element extends NodeWithChildren {
+    /**
+     * @param name Name of the tag, eg. `div`, `span`.
+     * @param attribs Object mapping attribute names to attribute values.
+     * @param children Children of the node.
+     */
+    constructor(name, attribs, children = [], type = name === "script"
+        ? ElementType.Script
+        : name === "style"
+            ? ElementType.Style
+            : ElementType.Tag) {
+        super(children);
+        this.name = name;
+        this.attribs = attribs;
+        this.type = type;
+    }
+    get nodeType() {
+        return 1;
+    }
+    // DOM Level 1 aliases
+    /**
+     * Same as {@link name}.
+     * [DOM spec](https://dom.spec.whatwg.org)-compatible alias.
+     */
+    get tagName() {
+        return this.name;
+    }
+    set tagName(name) {
+        this.name = name;
+    }
+    get attributes() {
+        return Object.keys(this.attribs).map((name) => {
+            var _a, _b;
+            return ({
+                name,
+                value: this.attribs[name],
+                namespace: (_a = this["x-attribsNamespace"]) === null || _a === void 0 ? void 0 : _a[name],
+                prefix: (_b = this["x-attribsPrefix"]) === null || _b === void 0 ? void 0 : _b[name],
+            });
+        });
+    }
+}
+/**
+ * @param node Node to check.
+ * @returns `true` if the node is a `Element`, `false` otherwise.
+ */
+export function isTag(node) {
+    return isTagRaw(node);
+}
+/**
+ * @param node Node to check.
+ * @returns `true` if the node has the type `CDATA`, `false` otherwise.
+ */
+export function isCDATA(node) {
+    return node.type === ElementType.CDATA;
+}
+/**
+ * @param node Node to check.
+ * @returns `true` if the node has the type `Text`, `false` otherwise.
+ */
+export function isText(node) {
+    return node.type === ElementType.Text;
+}
+/**
+ * @param node Node to check.
+ * @returns `true` if the node has the type `Comment`, `false` otherwise.
+ */
+export function isComment(node) {
+    return node.type === ElementType.Comment;
+}
+/**
+ * @param node Node to check.
+ * @returns `true` if the node has the type `ProcessingInstruction`, `false` otherwise.
+ */
+export function isDirective(node) {
+    return node.type === ElementType.Directive;
+}
+/**
+ * @param node Node to check.
+ * @returns `true` if the node has the type `ProcessingInstruction`, `false` otherwise.
+ */
+export function isDocument(node) {
+    return node.type === ElementType.Root;
+}
+/**
+ * @param node Node to check.
+ * @returns `true` if the node has children, `false` otherwise.
+ */
+export function hasChildren(node) {
+    return Object.prototype.hasOwnProperty.call(node, "children");
+}
+/**
+ * Clone a node, and optionally its children.
  *
- * @api public
+ * @param recursive Clone child nodes as well.
+ * @returns A clone of the node.
  */
-
-function formatArgs(args) {
-  var name = this.namespace;
-  var useColors = this.useColors;
-
-  if (useColors) {
-    var c = this.color;
-    var prefix = '  \u001b[3' + c + ';1m' + name + ' ' + '\u001b[0m';
-
-    args[0] = prefix + args[0].split('\n').join('\n' + prefix);
-    args.push('\u001b[3' + c + 'm+' + exports.humanize(this.diff) + '\u001b[0m');
-  } else {
-    args[0] = new Date().toUTCString()
-      + ' ' + name + ' ' + args[0];
-  }
+export function cloneNode(node, recursive = false) {
+    let result;
+    if (isText(node)) {
+        result = new Text(node.data);
+    }
+    else if (isComment(node)) {
+        result = new Comment(node.data);
+    }
+    else if (isTag(node)) {
+        const children = recursive ? cloneChildren(node.children) : [];
+        const clone = new Element(node.name, { ...node.attribs }, children);
+        children.forEach((child) => (child.parent = clone));
+        if (node.namespace != null) {
+            clone.namespace = node.namespace;
+        }
+        if (node["x-attribsNamespace"]) {
+            clone["x-attribsNamespace"] = { ...node["x-attribsNamespace"] };
+        }
+        if (node["x-attribsPrefix"]) {
+            clone["x-attribsPrefix"] = { ...node["x-attribsPrefix"] };
+        }
+        result = clone;
+    }
+    else if (isCDATA(node)) {
+        const children = recursive ? cloneChildren(node.children) : [];
+        const clone = new CDATA(children);
+        children.forEach((child) => (child.parent = clone));
+        result = clone;
+    }
+    else if (isDocument(node)) {
+        const children = recursive ? cloneChildren(node.children) : [];
+        const clone = new Document(children);
+        children.forEach((child) => (child.parent = clone));
+        if (node["x-mode"]) {
+            clone["x-mode"] = node["x-mode"];
+        }
+        result = clone;
+    }
+    else if (isDirective(node)) {
+        const instruction = new ProcessingInstruction(node.name, node.data);
+        if (node["x-name"] != null) {
+            instruction["x-name"] = node["x-name"];
+            instruction["x-publicId"] = node["x-publicId"];
+            instruction["x-systemId"] = node["x-systemId"];
+        }
+        result = instruction;
+    }
+    else {
+        throw new Error(`Not implemented yet: ${node.type}`);
+    }
+    result.startIndex = node.startIndex;
+    result.endIndex = node.endIndex;
+    if (node.sourceCodeLocation != null) {
+        result.sourceCodeLocation = node.sourceCodeLocation;
+    }
+    return result;
 }
-
-/**
- * Invokes `util.format()` with the specified arguments and writes to `stream`.
- */
-
-function log() {
-  return stream.write(util.format.apply(util, arguments) + '\n');
+function cloneChildren(childs) {
+    const children = childs.map((child) => cloneNode(child, true));
+    for (let i = 1; i < children.length; i++) {
+        children[i].prev = children[i - 1];
+        children[i - 1].next = children[i];
+    }
+    return children;
 }
-
-/**
- * Save `namespaces`.
- *
- * @param {String} namespaces
- * @api private
- */
-
-function save(namespaces) {
-  if (null == namespaces) {
-    // If you set a process.env field to null or undefined, it gets cast to the
-    // string 'null' or 'undefined'. Just delete instead.
-    delete process.env.DEBUG;
-  } else {
-    process.env.DEBUG = namespaces;
-  }
-}
-
-/**
- * Load `namespaces`.
- *
- * @return {String} returns the previously persisted debug modes
- * @api private
- */
-
-function load() {
-  return process.env.DEBUG;
-}
-
-/**
- * Copied from `node/src/node.js`.
- *
- * XXX: It's lame that node doesn't expose this API out-of-the-box. It also
- * relies on the undocumented `tty_wrap.guessHandleType()` which is also lame.
- */
-
-function createWritableStdioStream (fd) {
-  var stream;
-  var tty_wrap = process.binding('tty_wrap');
-
-  // Note stream._type is used for test-module-load-list.js
-
-  switch (tty_wrap.guessHandleType(fd)) {
-    case 'TTY':
-      stream = new tty.WriteStream(fd);
-      stream._type = 'tty';
-
-      // Hack to have stream not keep the event loop alive.
-      // See https://github.com/joyent/node/issues/1726
-      if (stream._handle && stream._handle.unref) {
-        stream._handle.unref();
-      }
-      break;
-
-    case 'FILE':
-      var fs = require('fs');
-      stream = new fs.SyncWriteStream(fd, { autoClose: false });
-      stream._type = 'fs';
-      break;
-
-    case 'PIPE':
-    case 'TCP':
-      var net = require('net');
-      stream = new net.Socket({
-        fd: fd,
-        readable: false,
-        writable: true
-      });
-
-      // FIXME Should probably have an option in net.Socket to create a
-      // stream from an existing fd which is writable only. But for now
-      // we'll just add this hack and set the `readable` member to false.
-      // Test: ./node test/fixtures/echo.js < /etc/passwd
-      stream.readable = false;
-      stream.read = null;
-      stream._type = 'pipe';
-
-      // FIXME Hack to have stream not keep the event loop alive.
-      // See https://github.com/joyent/node/issues/1726
-      if (stream._handle && stream._handle.unref) {
-        stream._handle.unref();
-      }
-      break;
-
-    default:
-      // Probably an error on in uv_guess_handle()
-      throw new Error('Implement me. Unknown stream file type!');
-  }
-
-  // For supporting legacy API we put the FD here.
-  stream.fd = fd;
-
-  stream._isStdio = true;
-
-  return stream;
-}
-
-/**
- * Init logic for `debug` instances.
- *
- * Create a new `inspectOpts` object in case `useColors` is set
- * differently for a particular `debug` instance.
- */
-
-function init (debug) {
-  debug.inspectOpts = {};
-
-  var keys = Object.keys(exports.inspectOpts);
-  for (var i = 0; i < keys.length; i++) {
-    debug.inspectOpts[keys[i]] = exports.inspectOpts[keys[i]];
-  }
-}
-
-/**
- * Enable namespaces listed in `process.env.DEBUG` initially.
- */
-
-exports.enable(load());
