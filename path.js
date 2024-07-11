@@ -1,68 +1,229 @@
+/*
+	MIT License http://www.opensource.org/licenses/mit-license.php
+	Author Tobias Koppers @sokra
+*/
+
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.convertPosixPathToPattern = exports.convertWindowsPathToPattern = exports.convertPathToPattern = exports.escapePosixPath = exports.escapeWindowsPath = exports.escape = exports.removeLeadingDotSegment = exports.makeAbsolute = exports.unixify = void 0;
-const os = require("os");
+
 const path = require("path");
-const IS_WINDOWS_PLATFORM = os.platform() === 'win32';
-const LEADING_DOT_SEGMENT_CHARACTERS_COUNT = 2; // ./ or .\\
+
+const CHAR_HASH = "#".charCodeAt(0);
+const CHAR_SLASH = "/".charCodeAt(0);
+const CHAR_BACKSLASH = "\\".charCodeAt(0);
+const CHAR_A = "A".charCodeAt(0);
+const CHAR_Z = "Z".charCodeAt(0);
+const CHAR_LOWER_A = "a".charCodeAt(0);
+const CHAR_LOWER_Z = "z".charCodeAt(0);
+const CHAR_DOT = ".".charCodeAt(0);
+const CHAR_COLON = ":".charCodeAt(0);
+
+const posixNormalize = path.posix.normalize;
+const winNormalize = path.win32.normalize;
+
 /**
- * All non-escaped special characters.
- * Posix: ()*?[]{|}, !+@ before (, ! at the beginning, \\ before non-special characters.
- * Windows: (){}[], !+@ before (, ! at the beginning.
+ * @enum {number}
  */
-const POSIX_UNESCAPED_GLOB_SYMBOLS_RE = /(\\?)([()*?[\]{|}]|^!|[!+@](?=\()|\\(?![!()*+?@[\]{|}]))/g;
-const WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE = /(\\?)([()[\]{}]|^!|[!+@](?=\())/g;
+const PathType = Object.freeze({
+	Empty: 0,
+	Normal: 1,
+	Relative: 2,
+	AbsoluteWin: 3,
+	AbsolutePosix: 4,
+	Internal: 5
+});
+exports.PathType = PathType;
+
 /**
- * The device path (\\.\ or \\?\).
- * https://learn.microsoft.com/en-us/dotnet/standard/io/file-path-formats#dos-device-paths
+ * @param {string} p a path
+ * @returns {PathType} type of path
  */
-const DOS_DEVICE_PATH_RE = /^\\\\([.?])/;
+const getType = p => {
+	switch (p.length) {
+		case 0:
+			return PathType.Empty;
+		case 1: {
+			const c0 = p.charCodeAt(0);
+			switch (c0) {
+				case CHAR_DOT:
+					return PathType.Relative;
+				case CHAR_SLASH:
+					return PathType.AbsolutePosix;
+				case CHAR_HASH:
+					return PathType.Internal;
+			}
+			return PathType.Normal;
+		}
+		case 2: {
+			const c0 = p.charCodeAt(0);
+			switch (c0) {
+				case CHAR_DOT: {
+					const c1 = p.charCodeAt(1);
+					switch (c1) {
+						case CHAR_DOT:
+						case CHAR_SLASH:
+							return PathType.Relative;
+					}
+					return PathType.Normal;
+				}
+				case CHAR_SLASH:
+					return PathType.AbsolutePosix;
+				case CHAR_HASH:
+					return PathType.Internal;
+			}
+			const c1 = p.charCodeAt(1);
+			if (c1 === CHAR_COLON) {
+				if (
+					(c0 >= CHAR_A && c0 <= CHAR_Z) ||
+					(c0 >= CHAR_LOWER_A && c0 <= CHAR_LOWER_Z)
+				) {
+					return PathType.AbsoluteWin;
+				}
+			}
+			return PathType.Normal;
+		}
+	}
+	const c0 = p.charCodeAt(0);
+	switch (c0) {
+		case CHAR_DOT: {
+			const c1 = p.charCodeAt(1);
+			switch (c1) {
+				case CHAR_SLASH:
+					return PathType.Relative;
+				case CHAR_DOT: {
+					const c2 = p.charCodeAt(2);
+					if (c2 === CHAR_SLASH) return PathType.Relative;
+					return PathType.Normal;
+				}
+			}
+			return PathType.Normal;
+		}
+		case CHAR_SLASH:
+			return PathType.AbsolutePosix;
+		case CHAR_HASH:
+			return PathType.Internal;
+	}
+	const c1 = p.charCodeAt(1);
+	if (c1 === CHAR_COLON) {
+		const c2 = p.charCodeAt(2);
+		if (
+			(c2 === CHAR_BACKSLASH || c2 === CHAR_SLASH) &&
+			((c0 >= CHAR_A && c0 <= CHAR_Z) ||
+				(c0 >= CHAR_LOWER_A && c0 <= CHAR_LOWER_Z))
+		) {
+			return PathType.AbsoluteWin;
+		}
+	}
+	return PathType.Normal;
+};
+exports.getType = getType;
+
 /**
- * All backslashes except those escaping special characters.
- * Windows: !()+@{}
- * https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#naming-conventions
+ * @param {string} p a path
+ * @returns {string} the normalized path
  */
-const WINDOWS_BACKSLASHES_RE = /\\(?![!()+@[\]{}])/g;
+const normalize = p => {
+	switch (getType(p)) {
+		case PathType.Empty:
+			return p;
+		case PathType.AbsoluteWin:
+			return winNormalize(p);
+		case PathType.Relative: {
+			const r = posixNormalize(p);
+			return getType(r) === PathType.Relative ? r : `./${r}`;
+		}
+	}
+	return posixNormalize(p);
+};
+exports.normalize = normalize;
+
 /**
- * Designed to work only with simple paths: `dir\\file`.
+ * @param {string} rootPath the root path
+ * @param {string | undefined} request the request path
+ * @returns {string} the joined path
  */
-function unixify(filepath) {
-    return filepath.replace(/\\/g, '/');
-}
-exports.unixify = unixify;
-function makeAbsolute(cwd, filepath) {
-    return path.resolve(cwd, filepath);
-}
-exports.makeAbsolute = makeAbsolute;
-function removeLeadingDotSegment(entry) {
-    // We do not use `startsWith` because this is 10x slower than current implementation for some cases.
-    // eslint-disable-next-line @typescript-eslint/prefer-string-starts-ends-with
-    if (entry.charAt(0) === '.') {
-        const secondCharactery = entry.charAt(1);
-        if (secondCharactery === '/' || secondCharactery === '\\') {
-            return entry.slice(LEADING_DOT_SEGMENT_CHARACTERS_COUNT);
-        }
-    }
-    return entry;
-}
-exports.removeLeadingDotSegment = removeLeadingDotSegment;
-exports.escape = IS_WINDOWS_PLATFORM ? escapeWindowsPath : escapePosixPath;
-function escapeWindowsPath(pattern) {
-    return pattern.replace(WINDOWS_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
-}
-exports.escapeWindowsPath = escapeWindowsPath;
-function escapePosixPath(pattern) {
-    return pattern.replace(POSIX_UNESCAPED_GLOB_SYMBOLS_RE, '\\$2');
-}
-exports.escapePosixPath = escapePosixPath;
-exports.convertPathToPattern = IS_WINDOWS_PLATFORM ? convertWindowsPathToPattern : convertPosixPathToPattern;
-function convertWindowsPathToPattern(filepath) {
-    return escapeWindowsPath(filepath)
-        .replace(DOS_DEVICE_PATH_RE, '//$1')
-        .replace(WINDOWS_BACKSLASHES_RE, '/');
-}
-exports.convertWindowsPathToPattern = convertWindowsPathToPattern;
-function convertPosixPathToPattern(filepath) {
-    return escapePosixPath(filepath);
-}
-exports.convertPosixPathToPattern = convertPosixPathToPattern;
+const join = (rootPath, request) => {
+	if (!request) return normalize(rootPath);
+	const requestType = getType(request);
+	switch (requestType) {
+		case PathType.AbsolutePosix:
+			return posixNormalize(request);
+		case PathType.AbsoluteWin:
+			return winNormalize(request);
+	}
+	switch (getType(rootPath)) {
+		case PathType.Normal:
+		case PathType.Relative:
+		case PathType.AbsolutePosix:
+			return posixNormalize(`${rootPath}/${request}`);
+		case PathType.AbsoluteWin:
+			return winNormalize(`${rootPath}\\${request}`);
+	}
+	switch (requestType) {
+		case PathType.Empty:
+			return rootPath;
+		case PathType.Relative: {
+			const r = posixNormalize(rootPath);
+			return getType(r) === PathType.Relative ? r : `./${r}`;
+		}
+	}
+	return posixNormalize(rootPath);
+};
+exports.join = join;
+
+/** @type {Map<string, Map<string, string | undefined>>} */
+const joinCache = new Map();
+
+/**
+ * @param {string} rootPath the root path
+ * @param {string} request the request path
+ * @returns {string} the joined path
+ */
+const cachedJoin = (rootPath, request) => {
+	/** @type {string | undefined} */
+	let cacheEntry;
+	let cache = joinCache.get(rootPath);
+	if (cache === undefined) {
+		joinCache.set(rootPath, (cache = new Map()));
+	} else {
+		cacheEntry = cache.get(request);
+		if (cacheEntry !== undefined) return cacheEntry;
+	}
+	cacheEntry = join(rootPath, request);
+	cache.set(request, cacheEntry);
+	return cacheEntry;
+};
+exports.cachedJoin = cachedJoin;
+
+/**
+ * @param {string} relativePath relative path
+ * @returns {undefined|Error} nothing or an error
+ */
+const checkImportsExportsFieldTarget = relativePath => {
+	let lastNonSlashIndex = 0;
+	let slashIndex = relativePath.indexOf("/", 1);
+	let cd = 0;
+
+	while (slashIndex !== -1) {
+		const folder = relativePath.slice(lastNonSlashIndex, slashIndex);
+
+		switch (folder) {
+			case "..": {
+				cd--;
+				if (cd < 0)
+					return new Error(
+						`Trying to access out of package scope. Requesting ${relativePath}`
+					);
+				break;
+			}
+			case ".":
+				break;
+			default:
+				cd++;
+				break;
+		}
+
+		lastNonSlashIndex = slashIndex + 1;
+		slashIndex = relativePath.indexOf("/", lastNonSlashIndex);
+	}
+};
+exports.checkImportsExportsFieldTarget = checkImportsExportsFieldTarget;
