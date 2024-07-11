@@ -1,113 +1,125 @@
-import { spawn as nodeSpawn, } from 'child_process';
-import crossSpawn from 'cross-spawn';
-import { onExit } from 'signal-exit';
-import { proxySignals } from './proxy-signals.js';
-import { watchdog } from './watchdog.js';
-/* c8 ignore start */
-const spawn = process?.platform === 'win32' ? crossSpawn : nodeSpawn;
-/**
- * Normalizes the arguments passed to `foregroundChild`.
- *
- * Exposed for testing.
- *
- * @internal
- */
-export const normalizeFgArgs = (fgArgs) => {
-    let [program, args = [], spawnOpts = {}, cleanup = () => { }] = fgArgs;
-    if (typeof args === 'function') {
-        cleanup = args;
-        spawnOpts = {};
-        args = [];
+'use strict';
+/// <reference types="../types/index.d.ts" />
+
+// (c) 2020-present Andrea Giammarchi
+
+const {parse: $parse, stringify: $stringify} = JSON;
+const {keys} = Object;
+
+const Primitive = String;   // it could be Number
+const primitive = 'string'; // it could be 'number'
+
+const ignore = {};
+const object = 'object';
+
+const noop = (_, value) => value;
+
+const primitives = value => (
+  value instanceof Primitive ? Primitive(value) : value
+);
+
+const Primitives = (_, value) => (
+  typeof value === primitive ? new Primitive(value) : value
+);
+
+const revive = (input, parsed, output, $) => {
+  const lazy = [];
+  for (let ke = keys(output), {length} = ke, y = 0; y < length; y++) {
+    const k = ke[y];
+    const value = output[k];
+    if (value instanceof Primitive) {
+      const tmp = input[value];
+      if (typeof tmp === object && !parsed.has(tmp)) {
+        parsed.add(tmp);
+        output[k] = ignore;
+        lazy.push({k, a: [input, parsed, tmp, $]});
+      }
+      else
+        output[k] = $.call(output, k, tmp);
     }
-    else if (!!args && typeof args === 'object' && !Array.isArray(args)) {
-        if (typeof spawnOpts === 'function')
-            cleanup = spawnOpts;
-        spawnOpts = args;
-        args = [];
-    }
-    else if (typeof spawnOpts === 'function') {
-        cleanup = spawnOpts;
-        spawnOpts = {};
-    }
-    if (Array.isArray(program)) {
-        const [pp, ...pa] = program;
-        program = pp;
-        args = pa;
-    }
-    return [program, args, { ...spawnOpts }, cleanup];
+    else if (output[k] !== ignore)
+      output[k] = $.call(output, k, value);
+  }
+  for (let {length} = lazy, i = 0; i < length; i++) {
+    const {k, a} = lazy[i];
+    output[k] = $.call(output, k, revive.apply(null, a));
+  }
+  return output;
 };
-export function foregroundChild(...fgArgs) {
-    const [program, args, spawnOpts, cleanup] = normalizeFgArgs(fgArgs);
-    spawnOpts.stdio = [0, 1, 2];
-    if (process.send) {
-        spawnOpts.stdio.push('ipc');
+
+const set = (known, input, value) => {
+  const index = Primitive(input.push(value) - 1);
+  known.set(value, index);
+  return index;
+};
+
+/**
+ * Converts a specialized flatted string into a JS value.
+ * @param {string} text
+ * @param {((this: any, key: string, value: any) => any) | undefined): any} [reviver]
+ * @returns {any}
+ */
+const parse = (text, reviver) => {
+  const input = $parse(text, Primitives).map(primitives);
+  const value = input[0];
+  const $ = reviver || noop;
+  const tmp = typeof value === object && value ?
+              revive(input, new Set, value, $) :
+              value;
+  return $.call({'': tmp}, '', tmp);
+};
+exports.parse = parse;
+
+/**
+ * Converts a JS value into a specialized flatted string.
+ * @param {any} value
+ * @param {((this: any, key: string, value: any) => any) | (string | number)[] | null | undefined} [replacer]
+ * @param {string | number | undefined} [space]
+ * @returns {string}
+ */
+const stringify = (value, replacer, space) => {
+  const $ = replacer && typeof replacer === object ?
+            (k, v) => (k === '' || -1 < replacer.indexOf(k) ? v : void 0) :
+            (replacer || noop);
+  const known = new Map;
+  const input = [];
+  const output = [];
+  let i = +set(known, input, $.call({'': value}, '', value));
+  let firstRun = !i;
+  while (i < input.length) {
+    firstRun = true;
+    output[i] = $stringify(input[i++], replace, space);
+  }
+  return '[' + output.join(',') + ']';
+  function replace(key, value) {
+    if (firstRun) {
+      firstRun = !firstRun;
+      return value;
     }
-    const child = spawn(program, args, spawnOpts);
-    const childHangup = () => {
-        try {
-            child.kill('SIGHUP');
-            /* c8 ignore start */
-        }
-        catch (_) {
-            // SIGHUP is weird on windows
-            child.kill('SIGTERM');
-        }
-        /* c8 ignore stop */
-    };
-    const removeOnExit = onExit(childHangup);
-    proxySignals(child);
-    watchdog(child);
-    let done = false;
-    child.on('close', async (code, signal) => {
-        /* c8 ignore start */
-        if (done)
-            return;
-        /* c8 ignore stop */
-        done = true;
-        const result = cleanup(code, signal);
-        const res = isPromise(result) ? await result : result;
-        removeOnExit();
-        if (res === false)
-            return;
-        else if (typeof res === 'string') {
-            signal = res;
-            code = null;
-        }
-        else if (typeof res === 'number') {
-            code = res;
-            signal = null;
-        }
-        if (signal) {
-            // If there is nothing else keeping the event loop alive,
-            // then there's a race between a graceful exit and getting
-            // the signal to this process.  Put this timeout here to
-            // make sure we're still alive to get the signal, and thus
-            // exit with the intended signal code.
-            /* istanbul ignore next */
-            setTimeout(() => { }, 2000);
-            try {
-                process.kill(process.pid, signal);
-                /* c8 ignore start */
-            }
-            catch (_) {
-                process.kill(process.pid, 'SIGTERM');
-            }
-            /* c8 ignore stop */
-        }
-        else {
-            process.exit(code || 0);
-        }
-    });
-    if (process.send) {
-        process.removeAllListeners('message');
-        child.on('message', (message, sendHandle) => {
-            process.send?.(message, sendHandle);
-        });
-        process.on('message', (message, sendHandle) => {
-            child.send(message, sendHandle);
-        });
+    const after = $.call(this, key, value);
+    switch (typeof after) {
+      case object:
+        if (after === null) return after;
+      case primitive:
+        return known.get(after) || set(known, input, after);
     }
-    return child;
-}
-const isPromise = (o) => !!o && typeof o === 'object' && typeof o.then === 'function';
-//# sourceMappingURL=index.js.map
+    return after;
+  }
+};
+exports.stringify = stringify;
+
+/**
+ * Converts a generic value into a JSON serializable object without losing recursion.
+ * @param {any} value
+ * @returns {any}
+ */
+const toJSON = value => $parse(stringify(value));
+exports.toJSON = toJSON;
+
+/**
+ * Converts a previously serialized object with recursion into a recursive one.
+ * @param {any} value
+ * @returns {any}
+ */
+const fromJSON = value => parse($stringify(value));
+exports.fromJSON = fromJSON;

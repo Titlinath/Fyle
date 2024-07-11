@@ -1,128 +1,115 @@
-# foreground-child
+# flatted
 
-Run a child as if it's the foreground process. Give it stdio. Exit
-when it exits.
+[![Downloads](https://img.shields.io/npm/dm/flatted.svg)](https://www.npmjs.com/package/flatted) [![Coverage Status](https://coveralls.io/repos/github/WebReflection/flatted/badge.svg?branch=main)](https://coveralls.io/github/WebReflection/flatted?branch=main) [![Build Status](https://travis-ci.com/WebReflection/flatted.svg?branch=main)](https://travis-ci.com/WebReflection/flatted) [![License: ISC](https://img.shields.io/badge/License-ISC-yellow.svg)](https://opensource.org/licenses/ISC) ![WebReflection status](https://offline.report/status/webreflection.svg)
 
-Mostly this module is here to support some use cases around
-wrapping child processes for test coverage and such. But it's
-also generally useful any time you want one program to execute
-another as if it's the "main" process, for example, if a program
-takes a `--cmd` argument to execute in some way.
+![snow flake](./flatted.jpg)
 
-## USAGE
+<sup>**Social Media Photo by [Matt Seymour](https://unsplash.com/@mattseymour) on [Unsplash](https://unsplash.com/)**</sup>
+
+A super light (0.5K) and fast circular JSON parser, directly from the creator of [CircularJSON](https://github.com/WebReflection/circular-json/#circularjson).
+
+Available also for **[PHP](./php/flatted.php)**.
+
+Available also for **[Python](./python/flatted.py)**.
+
+- - -
+
+## Announcement 📣
+
+There is a standard approach to recursion and more data-types than what JSON allows, and it's part of the [Structured Clone polyfill](https://github.com/ungap/structured-clone/#readme).
+
+Beside acting as a polyfill, its `@ungap/structured-clone/json` export provides both `stringify` and `parse`, and it's been tested for being faster than *flatted*, but its produced output is also smaller than *flatted* in general.
+
+The *@ungap/structured-clone* module is, in short, a drop in replacement for *flatted*, but it's not compatible with *flatted* specialized syntax.
+
+However, if recursion, as well as more data-types, are what you are after, or interesting for your projects/use cases, consider switching to this new module whenever you can 👍
+
+- - -
 
 ```js
-import { foregroundChild } from 'foreground-child'
-// hybrid module, this also works:
-// const { foregroundChild } = require('foreground-child')
-
-// cats out this file
-const child = foregroundChild('cat', [__filename])
-
-// At this point, it's best to just do nothing else.
-// return or whatever.
-// If the child gets a signal, or just exits, then this
-// parent process will exit in the same way.
+npm i flatted
 ```
 
-You can provide custom spawn options by passing an object after
-the program and arguments:
+Usable via [CDN](https://unpkg.com/flatted) or as regular module.
 
 ```js
-const child = foregroundChild(`cat ${__filename}`, { shell: true })
+// ESM
+import {parse, stringify, toJSON, fromJSON} from 'flatted';
+
+// CJS
+const {parse, stringify, toJSON, fromJSON} = require('flatted');
+
+const a = [{}];
+a[0].a = a;
+a.push(a);
+
+stringify(a); // [["1","0"],{"a":"0"}]
 ```
 
-A callback can optionally be provided, if you want to perform an
-action before your foreground-child exits:
+## toJSON and fromJSON
+
+If you'd like to implicitly survive JSON serialization, these two helpers helps:
 
 ```js
-const child = foregroundChild('cat', [__filename], spawnOptions, () => {
-  doSomeActions()
-})
+import {toJSON, fromJSON} from 'flatted';
+
+class RecursiveMap extends Map {
+  static fromJSON(any) {
+    return new this(fromJSON(any));
+  }
+  toJSON() {
+    return toJSON([...this.entries()]);
+  }
+}
+
+const recursive = new RecursiveMap;
+const same = {};
+same.same = same;
+recursive.set('same', same);
+
+const asString = JSON.stringify(recursive);
+const asMap = RecursiveMap.fromJSON(JSON.parse(asString));
+asMap.get('same') === asMap.get('same').same;
+// true
 ```
 
-The callback can return a Promise in order to perform
-asynchronous actions. If the callback does not return a promise,
-then it must complete its actions within a single JavaScript
-tick.
+
+## Flatted VS JSON
+
+As it is for every other specialized format capable of serializing and deserializing circular data, you should never `JSON.parse(Flatted.stringify(data))`, and you should never `Flatted.parse(JSON.stringify(data))`.
+
+The only way this could work is to `Flatted.parse(Flatted.stringify(data))`, as it is also for _CircularJSON_ or any other, otherwise there's no granted data integrity.
+
+Also please note this project serializes and deserializes only data compatible with JSON, so that sockets, or anything else with internal classes different from those allowed by JSON standard, won't be serialized and unserialized as expected.
+
+
+### New in V1: Exact same JSON API
+
+  * Added a [reviver](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse#Syntax) parameter to `.parse(string, reviver)` and revive your own objects.
+  * Added a [replacer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify#Syntax) and a `space` parameter to `.stringify(object, replacer, space)` for feature parity with JSON signature.
+
+
+### Compatibility
+All ECMAScript engines compatible with `Map`, `Set`, `Object.keys`, and `Array.prototype.reduce` will work, even if polyfilled.
+
+
+### How does it work ?
+While stringifying, all Objects, including Arrays, and strings, are flattened out and replaced as unique index. `*`
+
+Once parsed, all indexes will be replaced through the flattened collection.
+
+<sup><sub>`*` represented as string to avoid conflicts with numbers</sub></sup>
 
 ```js
-const child = foregroundChild('cat', [__filename], async () => {
-  await doSomeAsyncActions()
-})
-```
+// logic example
+var a = [{one: 1}, {two: '2'}];
+a[0].a = a;
+// a is the main object, will be at index '0'
+// {one: 1} is the second object, index '1'
+// {two: '2'} the third, in '2', and it has a string
+// which will be found at index '3'
 
-If the callback throws or rejects, then it will be unhandled, and
-node will exit in error.
-
-If the callback returns a string value, then that will be used as
-the signal to exit the parent process. If it returns a number,
-then that number will be used as the parent exit status code. If
-it returns boolean `false`, then the parent process will not be
-terminated. If it returns `undefined`, then it will exit with the
-same signal/code as the child process.
-
-## Caveats
-
-The "normal" standard IO file descriptors (0, 1, and 2 for stdin,
-stdout, and stderr respectively) are shared with the child process.
-Additionally, if there is an IPC channel set up in the parent, then
-messages are proxied to the child on file descriptor 3.
-
-In Node, it's possible to also map arbitrary file descriptors
-into a child process. In these cases, foreground-child will not
-map the file descriptors into the child. If file descriptors 0,
-1, or 2 are used for the IPC channel, then strange behavior may
-happen (like printing IPC messages to stderr, for example).
-
-Note that a SIGKILL will always kill the parent process, but
-will not proxy the signal to the child process, because SIGKILL
-cannot be caught. In order to address this, a special "watchdog"
-child process is spawned which will send a SIGKILL to the child
-process if it does not terminate within half a second after the
-watchdog receives a SIGHUP due to its parent terminating.
-
-On Windows, issuing a `process.kill(process.pid, signal)` with a
-fatal termination signal may cause the process to exit with a `1`
-status code rather than reporting the signal properly. This
-module tries to do the right thing, but on Windows systems, you
-may see that incorrect result. There is as far as I'm aware no
-workaround for this.
-
-## util: `foreground-child/proxy-signals`
-
-If you just want to proxy the signals to a child process that the
-main process receives, you can use the `proxy-signals` export
-from this package.
-
-```js
-import { proxySignals } from 'foreground-child/proxy-signals'
-
-const childProcess = spawn('command', ['some', 'args'])
-proxySignals(childProcess)
-```
-
-Now, any fatal signal received by the current process will be
-proxied to the child process.
-
-It doesn't go in the other direction; ie, signals sent to the
-child process will not affect the parent. For that, listen to the
-child `exit` or `close` events, and handle them appropriately.
-
-## util: `foreground-child/watchdog`
-
-If you are spawning a child process, and want to ensure that it
-isn't left dangling if the parent process exits, you can use the
-watchdog utility exported by this module.
-
-```js
-import { watchdog } from 'foreground-child/watchdog'
-
-const childProcess = spawn('command', ['some', 'args'])
-const watchdogProcess = watchdog(childProcess)
-
-// watchdogProcess is a reference to the process monitoring the
-// parent and child. There's usually no reason to do anything
-// with it, as it's silent and will terminate
-// automatically when it's no longer needed.
+Flatted.stringify(a);
+// [["1","2"],{"one":1,"a":"0"},{"two":"3"},"2"]
+// a[one,two]    {one: 1, a}    {two: '2'}  '2'
 ```
