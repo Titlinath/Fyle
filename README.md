@@ -1,54 +1,49 @@
-# ESLint Scope
+# es-define-property <sup>[![Version Badge][npm-version-svg]][package-url]</sup>
 
-ESLint Scope is the [ECMAScript](http://www.ecma-international.org/publications/standards/Ecma-262.htm) scope analyzer used in ESLint. It is a fork of [escope](http://github.com/estools/escope).
+[![github actions][actions-image]][actions-url]
+[![coverage][codecov-image]][codecov-url]
+[![License][license-image]][license-url]
+[![Downloads][downloads-image]][downloads-url]
 
-## Usage
+[![npm badge][npm-badge-png]][package-url]
 
-Install:
+`Object.defineProperty`, but not IE 8's broken one.
 
-```
-npm i eslint-scope --save
-```
-
-Example:
+## Example
 
 ```js
-var eslintScope = require('eslint-scope');
-var espree = require('espree');
-var estraverse = require('estraverse');
+const assert = require('assert');
 
-var ast = espree.parse(code);
-var scopeManager = eslintScope.analyze(ast);
+const $defineProperty = require('es-define-property');
 
-var currentScope = scopeManager.acquire(ast);   // global scope
-
-estraverse.traverse(ast, {
-    enter: function(node, parent) {
-        // do stuff
-
-        if (/Function/.test(node.type)) {
-            currentScope = scopeManager.acquire(node);  // get current function scope
-        }
-    },
-    leave: function(node, parent) {
-        if (/Function/.test(node.type)) {
-            currentScope = currentScope.upper;  // set to parent scope
-        }
-
-        // do stuff
-    }
-});
+if ($defineProperty) {
+    assert.equal($defineProperty, Object.defineProperty);
+} else if (Object.defineProperty) {
+    assert.equal($defineProperty, false, 'this is IE 8');
+} else {
+    assert.equal($defineProperty, false, 'this is an ES3 engine');
+}
 ```
 
-## Contributing
+## Tests
+Simply clone the repo, `npm install`, and run `npm test`
 
-Issues and pull requests will be triaged and responded to as quickly as possible. We operate under the [ESLint Contributor Guidelines](http://eslint.org/docs/developer-guide/contributing), so please be sure to read them before contributing. If you're not sure where to dig in, check out the [issues](https://github.com/eslint/eslint-scope/issues).
+## Security
 
-## Build Commands
+Please email [@ljharb](https://github.com/ljharb) or see https://tidelift.com/security if you have a potential security vulnerability to report.
 
-* `npm test` - run all linting and tests
-* `npm run lint` - run all linting
-
-## License
-
-ESLint Scope is licensed under a permissive BSD 2-clause license.
+[package-url]: https://npmjs.org/package/es-define-property
+[npm-version-svg]: https://versionbadg.es/ljharb/es-define-property.svg
+[deps-svg]: https://david-dm.org/ljharb/es-define-property.svg
+[deps-url]: https://david-dm.org/ljharb/es-define-property
+[dev-deps-svg]: https://david-dm.org/ljharb/es-define-property/dev-status.svg
+[dev-deps-url]: https://david-dm.org/ljharb/es-define-property#info=devDependencies
+[npm-badge-png]: https://nodei.co/npm/es-define-property.png?downloads=true&stars=true
+[license-image]: https://img.shields.io/npm/l/es-define-property.svg
+[license-url]: LICENSE
+[downloads-image]: https://img.shields.io/npm/dm/es-define-property.svg
+[downloads-url]: https://npm-stat.com/charts.html?package=es-define-property
+[codecov-image]: https://codecov.io/gh/ljharb/es-define-property/branch/main/graphs/badge.svg
+[codecov-url]: https://app.codecov.io/gh/ljharb/es-define-property/
+[actions-image]: https://img.shields.io/endpoint?url=https://github-actions-badge-u3jn4tfpocch.runkit.sh/ljharb/es-define-property
+[actions-url]: https://github.com/ljharb/es-define-property/actions
