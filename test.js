@@ -1,16 +1,20 @@
-'use strict'
+var isArray = require('./');
+var test = require('tape');
 
-var assert = require('assert')
-var clearRequire = require('clear-require')
+test('is array', function(t){
+  t.ok(isArray([]));
+  t.notOk(isArray({}));
+  t.notOk(isArray(null));
+  t.notOk(isArray(false));
 
-process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs6.10'
-process.env.LAMBDA_TASK_ROOT = '/var/task'
+  var obj = {};
+  obj[0] = true;
+  t.notOk(isArray(obj));
 
-var isCI = require('./')
-assert(isCI)
+  var arr = [];
+  arr.foo = 'bar';
+  t.ok(isArray(arr));
 
-delete process.env.AWS_EXECUTION_ENV
+  t.end();
+});
 
-clearRequire('./')
-isCI = require('./')
-assert(!isCI)

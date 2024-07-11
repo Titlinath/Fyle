@@ -1,31 +1,45 @@
 {
-  "name": "isexe",
-  "version": "2.0.0",
-  "description": "Minimal module to check if a file is executable.",
-  "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
-  "devDependencies": {
-    "mkdirp": "^0.5.1",
-    "rimraf": "^2.5.0",
-    "tap": "^10.3.0"
-  },
-  "scripts": {
-    "test": "tap test/*.js --100",
-    "preversion": "npm test",
-    "postversion": "npm publish",
-    "postpublish": "git push origin --all; git push origin --tags"
-  },
-  "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me/)",
-  "license": "ISC",
+  "author": "GitHub Inc.",
+  "name": "ini",
+  "description": "An ini encoder/decoder for node",
+  "version": "4.1.3",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/isaacs/isexe.git"
+    "url": "git+https://github.com/npm/ini.git"
   },
-  "keywords": [],
-  "bugs": {
-    "url": "https://github.com/isaacs/isexe/issues"
+  "main": "lib/ini.js",
+  "scripts": {
+    "eslint": "eslint",
+    "lint": "eslint \"**/*.{js,cjs,ts,mjs,jsx,tsx}\"",
+    "lintfix": "npm run lint -- --fix",
+    "test": "tap",
+    "snap": "tap",
+    "posttest": "npm run lint",
+    "postlint": "template-oss-check",
+    "template-oss-apply": "template-oss-apply --force"
   },
-  "homepage": "https://github.com/isaacs/isexe#readme"
+  "devDependencies": {
+    "@npmcli/eslint-config": "^4.0.0",
+    "@npmcli/template-oss": "4.22.0",
+    "tap": "^16.0.1"
+  },
+  "license": "ISC",
+  "files": [
+    "bin/",
+    "lib/"
+  ],
+  "engines": {
+    "node": "^14.17.0 || ^16.13.0 || >=18.0.0"
+  },
+  "templateOSS": {
+    "//@npmcli/template-oss": "This file is partially managed by @npmcli/template-oss. Edits may be overwritten.",
+    "version": "4.22.0",
+    "publish": "true"
+  },
+  "tap": {
+    "nyc-arg": [
+      "--exclude",
+      "tap-snapshots/**"
+    ]
+  }
 }

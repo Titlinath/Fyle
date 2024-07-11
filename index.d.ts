@@ -1,12 +1,3 @@
-/**
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.dev/license
- */
-import { execute } from './builder';
-import type { Schema as ExtractI18nBuilderOptions } from './schema';
-export { ExtractI18nBuilderOptions, execute };
-declare const _default: import("../../../../../angular_devkit/architect/src/internal").Builder<ExtractI18nBuilderOptions & import("../../../../../angular_devkit/core/src").JsonObject>;
-export default _default;
+/// <reference types="node" />
+export declare function isBinaryFile(file: string | Buffer, size?: number): Promise<boolean>;
+export declare function isBinaryFileSync(file: string | Buffer, size?: number): boolean;

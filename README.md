@@ -1,51 +1,180 @@
-# isexe
 
-Minimal module to check if a file is executable, and a normal file.
+An INI format parser & serializer.
 
-Uses `fs.stat` and tests against the `PATHEXT` environment variable on
-Windows.
+## Note
 
-## USAGE
+-   Sections are treated as nested objects.
 
-```javascript
-var isexe = require('isexe')
-isexe('some-file-name', function (err, isExe) {
-  if (err) {
-    console.error('probably file does not exist or something', err)
-  } else if (isExe) {
-    console.error('this thing can be run')
-  } else {
-    console.error('cannot be run')
-  }
+-   Section-less items are treated as globals.
+
+## Usage
+
+Consider an INI file such as the following:
+
+```ini
+; This comment is being ignored
+scope = global
+
+[database]
+user = dbuser
+password = dbpassword
+database = use_this_database
+
+[paths.default]
+datadir = /var/lib/data
+array[] = first value
+array[] = second value
+array[] = third value
+```
+
+You can **read**, **modify** and **write** it like so:
+
+```js
+import { writeFile , readFile } from 'node:fs/promises'
+import { stringify , parse } from 'ini'
+
+//  Read INI file as text
+
+let text = await readFile(`./Original.ini`,{
+    encoding : 'utf-8'
 })
 
-// same thing but synchronous, throws errors
-var isExe = isexe.sync('some-file-name')
+//  Parse text data to object
 
-// treat errors as just "not executable"
-isexe('maybe-missing-file', { ignoreErrors: true }, callback)
-var isExe = isexe.sync('maybe-missing-file', { ignoreErrors: true })
+const config = parse(text)
+
+//  Modify data object
+
+config.scope = 'local'
+config.database.database = 'use_another_database'
+config.paths.default.tmpdir = '/tmp'
+delete config.paths.default.datadir
+config.paths.default.array.push('fourth value')
+
+//  Stringify data object
+
+text = stringify(config,{ 
+    section : 'section' 
+})
+
+//  Write INI file as text
+
+await writeFile(`./Modified.ini`,text)
+```
+
+The written file will contain the following:
+
+```ini
+[section]
+scope=local
+[section.database]
+user=dbuser
+password=dbpassword
+database=use_another_database
+[section.paths.default]
+tmpdir=/tmp
+array[]=first value
+array[]=second value
+array[]=third value
+array[]=fourth value
 ```
 
 ## API
 
-### `isexe(path, [options], [callback])`
+### Parse
 
-Check if the path is executable.  If no callback provided, and a
-global `Promise` object is available, then a Promise will be returned.
+Attempts to turn the given INI string into a nested data object.
 
-Will raise whatever errors may be raised by `fs.stat`, unless
-`options.ignoreErrors` is set to true.
+```js
+// You can also use `decode`
+const object = parse(`<INI Text>`) 
+```
 
-### `isexe.sync(path, [options])`
+### Stringify
 
-Same as `isexe` but returns the value and throws any errors raised.
+Encodes the given data object as an INI formatted string.
 
-### Options
+```js
+// You can also use `encode`
+stringify(object,{
 
-* `ignoreErrors` Treat all errors as "no, this is not executable", but
-  don't raise them.
-* `uid` Number to use as the user id
-* `gid` Number to use as the group id
-* `pathExt` List of path extensions to use instead of `PATHEXT`
-  environment variable on Windows.
+    /**
+     *  Whether to insert spaces before & after `=`
+     * 
+     *  Disabled by default to have better 
+     *  compatibility with old picky parsers.
+     */
+
+    whitespace : false ,
+
+    /**
+     *  Whether to align the `=` character for each section.
+     *  -> Also enables the `whitespace` option
+     */
+
+    align : false ,
+
+    /**
+     *  Identifier to use for global items 
+     *  and to prepend to all other sections.
+     */
+
+    section ,
+
+    /**
+     *  Whether to sort all sections & their keys alphabetically.
+     */
+
+    sort : false ,
+
+    /**
+     *  Whether to insert a newline after each section header.
+     * 
+     *  The TOSHIBA & FlashAir parser require this format. 
+     */
+
+    newline : false ,
+
+    /**
+     *  Which platforms line-endings should be used.
+     * 
+     *  win32 -> CR+LF
+     *  other -> LF
+     * 
+     *  Default is the current platform
+     */
+
+    platform ,
+
+    /**
+     *  Whether to append `[]` to array keys.
+     * 
+     *  Some parsers treat duplicate names by themselves as arrays
+     */
+
+    bracketedArray : true
+
+})
+```
+
+*For backwards compatibility any string passed as the*  
+*options parameter is treated as the `section` option.*
+
+```js
+stringify(object,'section')
+```
+
+### Un / Escape
+
+Turn the given string into a safe to  
+use key or value in your INI file.
+
+```js
+safe(`"unsafe string"`) // -> \"unsafe string\"
+```
+
+Or reverse the process with:
+
+```js
+unsafe(`\\"safe string\\"`) // -> "safe string"
+```
