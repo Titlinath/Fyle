@@ -1,93 +1,29 @@
-declare module "colorette" {
-  type Color = (text: string | number) => string
+declare const stringWidth: {
+	/**
+	Get the visual width of a string - the number of columns required to display it.
 
-  interface Colorette {
-    reset: Color
-    bold: Color
-    dim: Color
-    italic: Color
-    underline: Color
-    inverse: Color
-    hidden: Color
-    strikethrough: Color
-    black: Color
-    red: Color
-    green: Color
-    yellow: Color
-    blue: Color
-    magenta: Color
-    cyan: Color
-    white: Color
-    gray: Color
-    bgBlack: Color
-    bgRed: Color
-    bgGreen: Color
-    bgYellow: Color
-    bgBlue: Color
-    bgMagenta: Color
-    bgCyan: Color
-    bgWhite: Color
-    blackBright: Color
-    redBright: Color
-    greenBright: Color
-    yellowBright: Color
-    blueBright: Color
-    magentaBright: Color
-    cyanBright: Color
-    whiteBright: Color
-    bgBlackBright: Color
-    bgRedBright: Color
-    bgGreenBright: Color
-    bgYellowBright: Color
-    bgBlueBright: Color
-    bgMagentaBright: Color
-    bgCyanBright: Color
-    bgWhiteBright: Color
-  }
+	Some Unicode characters are [fullwidth](https://en.wikipedia.org/wiki/Halfwidth_and_fullwidth_forms) and use double the normal width. [ANSI escape codes](https://en.wikipedia.org/wiki/ANSI_escape_code) are stripped and doesn't affect the width.
 
-  const reset: Color
-  const bold: Color
-  const dim: Color
-  const italic: Color
-  const underline: Color
-  const inverse: Color
-  const hidden: Color
-  const strikethrough: Color
-  const black: Color
-  const red: Color
-  const green: Color
-  const yellow: Color
-  const blue: Color
-  const magenta: Color
-  const cyan: Color
-  const white: Color
-  const gray: Color
-  const bgBlack: Color
-  const bgRed: Color
-  const bgGreen: Color
-  const bgYellow: Color
-  const bgBlue: Color
-  const bgMagenta: Color
-  const bgCyan: Color
-  const bgWhite: Color
-  const blackBright: Color
-  const redBright: Color
-  const greenBright: Color
-  const yellowBright: Color
-  const blueBright: Color
-  const magentaBright: Color
-  const cyanBright: Color
-  const whiteBright: Color
-  const bgBlackBright: Color
-  const bgRedBright: Color
-  const bgGreenBright: Color
-  const bgYellowBright: Color
-  const bgBlueBright: Color
-  const bgMagentaBright: Color
-  const bgCyanBright: Color
-  const bgWhiteBright: Color
+	@example
+	```
+	import stringWidth = require('string-width');
 
-  const isColorSupported: boolean
+	stringWidth('a');
+	//=> 1
 
-  function createColors(options?: { useColor: boolean }): Colorette
+	stringWidth('古');
+	//=> 2
+
+	stringWidth('\u001B[1m古\u001B[22m');
+	//=> 2
+	```
+	*/
+	(string: string): number;
+
+	// TODO: remove this in the next major version, refactor the whole definition to:
+	// declare function stringWidth(string: string): number;
+	// export = stringWidth;
+	default: typeof stringWidth;
 }
+
+export = stringWidth;

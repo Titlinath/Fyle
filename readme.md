@@ -1,51 +1,50 @@
-# ms
+# string-width
 
-[![Build Status](https://travis-ci.org/zeit/ms.svg?branch=master)](https://travis-ci.org/zeit/ms)
-[![Slack Channel](http://zeit-slackin.now.sh/badge.svg)](https://zeit.chat/)
+> Get the visual width of a string - the number of columns required to display it
 
-Use this package to easily convert various time formats to milliseconds.
+Some Unicode characters are [fullwidth](https://en.wikipedia.org/wiki/Halfwidth_and_fullwidth_forms) and use double the normal width. [ANSI escape codes](https://en.wikipedia.org/wiki/ANSI_escape_code) are stripped and doesn't affect the width.
 
-## Examples
+Useful to be able to measure the actual width of command-line output.
 
-```js
-ms('2 days')  // 172800000
-ms('1d')      // 86400000
-ms('10h')     // 36000000
-ms('2.5 hrs') // 9000000
-ms('2h')      // 7200000
-ms('1m')      // 60000
-ms('5s')      // 5000
-ms('1y')      // 31557600000
-ms('100')     // 100
+
+## Install
+
+```
+$ npm install string-width
 ```
 
-### Convert from milliseconds
+
+## Usage
 
 ```js
-ms(60000)             // "1m"
-ms(2 * 60000)         // "2m"
-ms(ms('10 hours'))    // "10h"
+const stringWidth = require('string-width');
+
+stringWidth('a');
+//=> 1
+
+stringWidth('古');
+//=> 2
+
+stringWidth('\u001B[1m古\u001B[22m');
+//=> 2
 ```
 
-### Time format written-out
 
-```js
-ms(60000, { long: true })             // "1 minute"
-ms(2 * 60000, { long: true })         // "2 minutes"
-ms(ms('10 hours'), { long: true })    // "10 hours"
-```
+## Related
 
-## Features
+- [string-width-cli](https://github.com/sindresorhus/string-width-cli) - CLI for this module
+- [string-length](https://github.com/sindresorhus/string-length) - Get the real length of a string
+- [widest-line](https://github.com/sindresorhus/widest-line) - Get the visual width of the widest line in a string
 
-- Works both in [node](https://nodejs.org) and in the browser.
-- If a number is supplied to `ms`, a string with a unit is returned.
-- If a string that contains the number is supplied, it returns it as a number (e.g.: it returns `100` for `'100'`).
-- If you pass a string with a number and a valid unit, the number of equivalent ms is returned.
 
-## Caught a bug?
+---
 
-1. [Fork](https://help.github.com/articles/fork-a-repo/) this repository to your own GitHub account and then [clone](https://help.github.com/articles/cloning-a-repository/) it to your local device
-2. Link the package to the global module directory: `npm link`
-3. Within the module you want to test your local development instance of ms, just link it to the dependencies: `npm link ms`. Instead of the default one from npm, node will now use your clone of ms!
-
-As always, you can run the tests using: `npm test`
+<div align="center">
+	<b>
+		<a href="https://tidelift.com/subscription/pkg/npm-string-width?utm_source=npm-string-width&utm_medium=referral&utm_campaign=readme">Get professional support for this package with a Tidelift subscription</a>
+	</b>
+	<br>
+	<sub>
+		Tidelift helps make open source sustainable for maintainers while giving companies<br>assurances about security, maintenance, and licensing for their dependencies.
+	</sub>
+</div>

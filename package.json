@@ -1,81 +1,56 @@
 {
-  "name": "clone-deep",
-  "description": "Recursively (deep) clone JavaScript native types, like Object, Array, RegExp, Date as well as primitives.",
-  "version": "4.0.1",
-  "homepage": "https://github.com/jonschlinkert/clone-deep",
-  "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
-  "repository": "jonschlinkert/clone-deep",
-  "bugs": {
-    "url": "https://github.com/jonschlinkert/clone-deep/issues"
-  },
-  "license": "MIT",
-  "files": [
-    "index.js"
-  ],
-  "main": "index.js",
-  "engines": {
-    "node": ">=6"
-  },
-  "scripts": {
-    "test": "mocha"
-  },
-  "dependencies": {
-    "is-plain-object": "^2.0.4",
-    "kind-of": "^6.0.2",
-    "shallow-clone": "^3.0.0"
-  },
-  "devDependencies": {
-    "gulp-format-md": "^2.0.0",
-    "mocha": "^5.2.0"
-  },
-  "keywords": [
-    "array",
-    "assign",
-    "buffer",
-    "clamped",
-    "clone",
-    "clone-array",
-    "clone-array-deep",
-    "clone-buffer",
-    "clone-date",
-    "clone-deep",
-    "clone-map",
-    "clone-object",
-    "clone-object-deep",
-    "clone-reg-exp",
-    "clone-regex",
-    "clone-regexp",
-    "clone-set",
-    "date",
-    "deep",
-    "extend",
-    "mixin",
-    "mixin-object",
-    "object",
-    "regex",
-    "regexp",
-    "shallow",
-    "symbol"
-  ],
-  "verb": {
-    "toc": false,
-    "layout": "default",
-    "tasks": [
-      "readme"
-    ],
-    "plugins": [
-      "gulp-format-md"
-    ],
-    "related": {
-      "list": [
-        "is-plain-object",
-        "isobject",
-        "kind-of",
-        "shallow-clone"
-      ]
-    },
-    "lint": {
-      "reflinks": true
-    }
-  }
+	"name": "string-width",
+	"version": "4.2.3",
+	"description": "Get the visual width of a string - the number of columns required to display it",
+	"license": "MIT",
+	"repository": "sindresorhus/string-width",
+	"author": {
+		"name": "Sindre Sorhus",
+		"email": "sindresorhus@gmail.com",
+		"url": "sindresorhus.com"
+	},
+	"engines": {
+		"node": ">=8"
+	},
+	"scripts": {
+		"test": "xo && ava && tsd"
+	},
+	"files": [
+		"index.js",
+		"index.d.ts"
+	],
+	"keywords": [
+		"string",
+		"character",
+		"unicode",
+		"width",
+		"visual",
+		"column",
+		"columns",
+		"fullwidth",
+		"full-width",
+		"full",
+		"ansi",
+		"escape",
+		"codes",
+		"cli",
+		"command-line",
+		"terminal",
+		"console",
+		"cjk",
+		"chinese",
+		"japanese",
+		"korean",
+		"fixed-width"
+	],
+	"dependencies": {
+		"emoji-regex": "^8.0.0",
+		"is-fullwidth-code-point": "^3.0.0",
+		"strip-ansi": "^6.0.1"
+	},
+	"devDependencies": {
+		"ava": "^1.4.1",
+		"tsd": "^0.7.1",
+		"xo": "^0.24.0"
+	}
 }
