@@ -1,1091 +1,350 @@
-'use strict';
-
-const constants = require('./constants');
-const utils = require('./utils');
-
-/**
- * Constants
- */
-
-const {
-  MAX_LENGTH,
-  POSIX_REGEX_SOURCE,
-  REGEX_NON_SPECIAL_CHARS,
-  REGEX_SPECIAL_CHARS_BACKREF,
-  REPLACEMENTS
-} = constants;
-
-/**
- * Helpers
- */
-
-const expandRange = (args, options) => {
-  if (typeof options.expandRange === 'function') {
-    return options.expandRange(...args, options);
-  }
-
-  args.sort();
-  const value = `[${args.join('-')}]`;
-
-  try {
-    /* eslint-disable-next-line no-new */
-    new RegExp(value);
-  } catch (ex) {
-    return args.map(v => utils.escapeRegex(v)).join('..');
-  }
-
-  return value;
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const types_1 = require("./types");
+const __1 = require("..");
+const codegen_1 = require("../codegen");
+const ref_error_1 = require("../ref_error");
+const names_1 = require("../names");
+const code_1 = require("../../vocabularies/code");
+const ref_1 = require("../../vocabularies/jtd/ref");
+const type_1 = require("../../vocabularies/jtd/type");
+const parseJson_1 = require("../../runtime/parseJson");
+const util_1 = require("../util");
+const timestamp_1 = require("../../runtime/timestamp");
+const genParse = {
+    elements: parseElements,
+    values: parseValues,
+    discriminator: parseDiscriminator,
+    properties: parseProperties,
+    optionalProperties: parseProperties,
+    enum: parseEnum,
+    type: parseType,
+    ref: parseRef,
 };
-
-/**
- * Create the message for a syntax error
- */
-
-const syntaxError = (type, char) => {
-  return `Missing ${type}: "${char}" - use "\\\\${char}" to match literal characters`;
-};
-
-/**
- * Parse the given input string.
- * @param {String} input
- * @param {Object} options
- * @return {Object}
- */
-
-const parse = (input, options) => {
-  if (typeof input !== 'string') {
-    throw new TypeError('Expected a string');
-  }
-
-  input = REPLACEMENTS[input] || input;
-
-  const opts = { ...options };
-  const max = typeof opts.maxLength === 'number' ? Math.min(MAX_LENGTH, opts.maxLength) : MAX_LENGTH;
-
-  let len = input.length;
-  if (len > max) {
-    throw new SyntaxError(`Input length: ${len}, exceeds maximum allowed length: ${max}`);
-  }
-
-  const bos = { type: 'bos', value: '', output: opts.prepend || '' };
-  const tokens = [bos];
-
-  const capture = opts.capture ? '' : '?:';
-  const win32 = utils.isWindows(options);
-
-  // create constants based on platform, for windows or posix
-  const PLATFORM_CHARS = constants.globChars(win32);
-  const EXTGLOB_CHARS = constants.extglobChars(PLATFORM_CHARS);
-
-  const {
-    DOT_LITERAL,
-    PLUS_LITERAL,
-    SLASH_LITERAL,
-    ONE_CHAR,
-    DOTS_SLASH,
-    NO_DOT,
-    NO_DOT_SLASH,
-    NO_DOTS_SLASH,
-    QMARK,
-    QMARK_NO_DOT,
-    STAR,
-    START_ANCHOR
-  } = PLATFORM_CHARS;
-
-  const globstar = opts => {
-    return `(${capture}(?:(?!${START_ANCHOR}${opts.dot ? DOTS_SLASH : DOT_LITERAL}).)*?)`;
-  };
-
-  const nodot = opts.dot ? '' : NO_DOT;
-  const qmarkNoDot = opts.dot ? QMARK : QMARK_NO_DOT;
-  let star = opts.bash === true ? globstar(opts) : STAR;
-
-  if (opts.capture) {
-    star = `(${star})`;
-  }
-
-  // minimatch options support
-  if (typeof opts.noext === 'boolean') {
-    opts.noextglob = opts.noext;
-  }
-
-  const state = {
-    input,
-    index: -1,
-    start: 0,
-    dot: opts.dot === true,
-    consumed: '',
-    output: '',
-    prefix: '',
-    backtrack: false,
-    negated: false,
-    brackets: 0,
-    braces: 0,
-    parens: 0,
-    quotes: 0,
-    globstar: false,
-    tokens
-  };
-
-  input = utils.removePrefix(input, state);
-  len = input.length;
-
-  const extglobs = [];
-  const braces = [];
-  const stack = [];
-  let prev = bos;
-  let value;
-
-  /**
-   * Tokenizing helpers
-   */
-
-  const eos = () => state.index === len - 1;
-  const peek = state.peek = (n = 1) => input[state.index + n];
-  const advance = state.advance = () => input[++state.index] || '';
-  const remaining = () => input.slice(state.index + 1);
-  const consume = (value = '', num = 0) => {
-    state.consumed += value;
-    state.index += num;
-  };
-
-  const append = token => {
-    state.output += token.output != null ? token.output : token.value;
-    consume(token.value);
-  };
-
-  const negate = () => {
-    let count = 1;
-
-    while (peek() === '!' && (peek(2) !== '(' || peek(3) === '?')) {
-      advance();
-      state.start++;
-      count++;
+function compileParser(sch, definitions) {
+    const _sch = __1.getCompilingSchema.call(this, sch);
+    if (_sch)
+        return _sch;
+    const { es5, lines } = this.opts.code;
+    const { ownProperties } = this.opts;
+    const gen = new codegen_1.CodeGen(this.scope, { es5, lines, ownProperties });
+    const parseName = gen.scopeName("parse");
+    const cxt = {
+        self: this,
+        gen,
+        schema: sch.schema,
+        schemaEnv: sch,
+        definitions,
+        data: names_1.default.data,
+        parseName,
+        char: gen.name("c"),
+    };
+    let sourceCode;
+    try {
+        this._compilations.add(sch);
+        sch.parseName = parseName;
+        parserFunction(cxt);
+        gen.optimize(this.opts.code.optimize);
+        const parseFuncCode = gen.toString();
+        sourceCode = `${gen.scopeRefs(names_1.default.scope)}return ${parseFuncCode}`;
+        const makeParse = new Function(`${names_1.default.scope}`, sourceCode);
+        const parse = makeParse(this.scope.get());
+        this.scope.value(parseName, { ref: parse });
+        sch.parse = parse;
     }
-
-    if (count % 2 === 0) {
-      return false;
+    catch (e) {
+        if (sourceCode)
+            this.logger.error("Error compiling parser, function code:", sourceCode);
+        delete sch.parse;
+        delete sch.parseName;
+        throw e;
     }
-
-    state.negated = true;
-    state.start++;
-    return true;
-  };
-
-  const increment = type => {
-    state[type]++;
-    stack.push(type);
-  };
-
-  const decrement = type => {
-    state[type]--;
-    stack.pop();
-  };
-
-  /**
-   * Push tokens onto the tokens array. This helper speeds up
-   * tokenizing by 1) helping us avoid backtracking as much as possible,
-   * and 2) helping us avoid creating extra tokens when consecutive
-   * characters are plain text. This improves performance and simplifies
-   * lookbehinds.
-   */
-
-  const push = tok => {
-    if (prev.type === 'globstar') {
-      const isBrace = state.braces > 0 && (tok.type === 'comma' || tok.type === 'brace');
-      const isExtglob = tok.extglob === true || (extglobs.length && (tok.type === 'pipe' || tok.type === 'paren'));
-
-      if (tok.type !== 'slash' && tok.type !== 'paren' && !isBrace && !isExtglob) {
-        state.output = state.output.slice(0, -prev.output.length);
-        prev.type = 'star';
-        prev.value = '*';
-        prev.output = star;
-        state.output += prev.output;
-      }
+    finally {
+        this._compilations.delete(sch);
     }
-
-    if (extglobs.length && tok.type !== 'paren') {
-      extglobs[extglobs.length - 1].inner += tok.value;
-    }
-
-    if (tok.value || tok.output) append(tok);
-    if (prev && prev.type === 'text' && tok.type === 'text') {
-      prev.value += tok.value;
-      prev.output = (prev.output || '') + tok.value;
-      return;
-    }
-
-    tok.prev = prev;
-    tokens.push(tok);
-    prev = tok;
-  };
-
-  const extglobOpen = (type, value) => {
-    const token = { ...EXTGLOB_CHARS[value], conditions: 1, inner: '' };
-
-    token.prev = prev;
-    token.parens = state.parens;
-    token.output = state.output;
-    const output = (opts.capture ? '(' : '') + token.open;
-
-    increment('parens');
-    push({ type, value, output: state.output ? '' : ONE_CHAR });
-    push({ type: 'paren', extglob: true, value: advance(), output });
-    extglobs.push(token);
-  };
-
-  const extglobClose = token => {
-    let output = token.close + (opts.capture ? ')' : '');
-    let rest;
-
-    if (token.type === 'negate') {
-      let extglobStar = star;
-
-      if (token.inner && token.inner.length > 1 && token.inner.includes('/')) {
-        extglobStar = globstar(opts);
-      }
-
-      if (extglobStar !== star || eos() || /^\)+$/.test(remaining())) {
-        output = token.close = `)$))${extglobStar}`;
-      }
-
-      if (token.inner.includes('*') && (rest = remaining()) && /^\.[^\\/.]+$/.test(rest)) {
-        // Any non-magical string (`.ts`) or even nested expression (`.{ts,tsx}`) can follow after the closing parenthesis.
-        // In this case, we need to parse the string and use it in the output of the original pattern.
-        // Suitable patterns: `/!(*.d).ts`, `/!(*.d).{ts,tsx}`, `**/!(*-dbg).@(js)`.
-        //
-        // Disabling the `fastpaths` option due to a problem with parsing strings as `.ts` in the pattern like `**/!(*.d).ts`.
-        const expression = parse(rest, { ...options, fastpaths: false }).output;
-
-        output = token.close = `)${expression})${extglobStar})`;
-      }
-
-      if (token.prev.type === 'bos') {
-        state.negatedExtglob = true;
-      }
-    }
-
-    push({ type: 'paren', extglob: true, value, output });
-    decrement('parens');
-  };
-
-  /**
-   * Fast paths
-   */
-
-  if (opts.fastpaths !== false && !/(^[*!]|[/()[\]{}"])/.test(input)) {
-    let backslashes = false;
-
-    let output = input.replace(REGEX_SPECIAL_CHARS_BACKREF, (m, esc, chars, first, rest, index) => {
-      if (first === '\\') {
-        backslashes = true;
-        return m;
-      }
-
-      if (first === '?') {
-        if (esc) {
-          return esc + first + (rest ? QMARK.repeat(rest.length) : '');
-        }
-        if (index === 0) {
-          return qmarkNoDot + (rest ? QMARK.repeat(rest.length) : '');
-        }
-        return QMARK.repeat(chars.length);
-      }
-
-      if (first === '.') {
-        return DOT_LITERAL.repeat(chars.length);
-      }
-
-      if (first === '*') {
-        if (esc) {
-          return esc + first + (rest ? star : '');
-        }
-        return star;
-      }
-      return esc ? m : `\\${m}`;
-    });
-
-    if (backslashes === true) {
-      if (opts.unescape === true) {
-        output = output.replace(/\\/g, '');
-      } else {
-        output = output.replace(/\\+/g, m => {
-          return m.length % 2 === 0 ? '\\\\' : (m ? '\\' : '');
+    return sch;
+}
+exports.default = compileParser;
+const undef = (0, codegen_1._) `undefined`;
+function parserFunction(cxt) {
+    const { gen, parseName, char } = cxt;
+    gen.func(parseName, (0, codegen_1._) `${names_1.default.json}, ${names_1.default.jsonPos}, ${names_1.default.jsonPart}`, false, () => {
+        gen.let(names_1.default.data);
+        gen.let(char);
+        gen.assign((0, codegen_1._) `${parseName}.message`, undef);
+        gen.assign((0, codegen_1._) `${parseName}.position`, undef);
+        gen.assign(names_1.default.jsonPos, (0, codegen_1._) `${names_1.default.jsonPos} || 0`);
+        gen.const(names_1.default.jsonLen, (0, codegen_1._) `${names_1.default.json}.length`);
+        parseCode(cxt);
+        skipWhitespace(cxt);
+        gen.if(names_1.default.jsonPart, () => {
+            gen.assign((0, codegen_1._) `${parseName}.position`, names_1.default.jsonPos);
+            gen.return(names_1.default.data);
         });
-      }
-    }
-
-    if (output === input && opts.contains === true) {
-      state.output = input;
-      return state;
-    }
-
-    state.output = utils.wrapOutput(output, state, options);
-    return state;
-  }
-
-  /**
-   * Tokenize input until we reach end-of-string
-   */
-
-  while (!eos()) {
-    value = advance();
-
-    if (value === '\u0000') {
-      continue;
-    }
-
-    /**
-     * Escaped characters
-     */
-
-    if (value === '\\') {
-      const next = peek();
-
-      if (next === '/' && opts.bash !== true) {
-        continue;
-      }
-
-      if (next === '.' || next === ';') {
-        continue;
-      }
-
-      if (!next) {
-        value += '\\';
-        push({ type: 'text', value });
-        continue;
-      }
-
-      // collapse slashes to reduce potential for exploits
-      const match = /^\\+/.exec(remaining());
-      let slashes = 0;
-
-      if (match && match[0].length > 2) {
-        slashes = match[0].length;
-        state.index += slashes;
-        if (slashes % 2 !== 0) {
-          value += '\\';
-        }
-      }
-
-      if (opts.unescape === true) {
-        value = advance();
-      } else {
-        value += advance();
-      }
-
-      if (state.brackets === 0) {
-        push({ type: 'text', value });
-        continue;
-      }
-    }
-
-    /**
-     * If we're inside a regex character class, continue
-     * until we reach the closing bracket.
-     */
-
-    if (state.brackets > 0 && (value !== ']' || prev.value === '[' || prev.value === '[^')) {
-      if (opts.posix !== false && value === ':') {
-        const inner = prev.value.slice(1);
-        if (inner.includes('[')) {
-          prev.posix = true;
-
-          if (inner.includes(':')) {
-            const idx = prev.value.lastIndexOf('[');
-            const pre = prev.value.slice(0, idx);
-            const rest = prev.value.slice(idx + 2);
-            const posix = POSIX_REGEX_SOURCE[rest];
-            if (posix) {
-              prev.value = pre + posix;
-              state.backtrack = true;
-              advance();
-
-              if (!bos.output && tokens.indexOf(prev) === 1) {
-                bos.output = ONE_CHAR;
-              }
-              continue;
-            }
-          }
-        }
-      }
-
-      if ((value === '[' && peek() !== ':') || (value === '-' && peek() === ']')) {
-        value = `\\${value}`;
-      }
-
-      if (value === ']' && (prev.value === '[' || prev.value === '[^')) {
-        value = `\\${value}`;
-      }
-
-      if (opts.posix === true && value === '!' && prev.value === '[') {
-        value = '^';
-      }
-
-      prev.value += value;
-      append({ value });
-      continue;
-    }
-
-    /**
-     * If we're inside a quoted string, continue
-     * until we reach the closing double quote.
-     */
-
-    if (state.quotes === 1 && value !== '"') {
-      value = utils.escapeRegex(value);
-      prev.value += value;
-      append({ value });
-      continue;
-    }
-
-    /**
-     * Double quotes
-     */
-
-    if (value === '"') {
-      state.quotes = state.quotes === 1 ? 0 : 1;
-      if (opts.keepQuotes === true) {
-        push({ type: 'text', value });
-      }
-      continue;
-    }
-
-    /**
-     * Parentheses
-     */
-
-    if (value === '(') {
-      increment('parens');
-      push({ type: 'paren', value });
-      continue;
-    }
-
-    if (value === ')') {
-      if (state.parens === 0 && opts.strictBrackets === true) {
-        throw new SyntaxError(syntaxError('opening', '('));
-      }
-
-      const extglob = extglobs[extglobs.length - 1];
-      if (extglob && state.parens === extglob.parens + 1) {
-        extglobClose(extglobs.pop());
-        continue;
-      }
-
-      push({ type: 'paren', value, output: state.parens ? ')' : '\\)' });
-      decrement('parens');
-      continue;
-    }
-
-    /**
-     * Square brackets
-     */
-
-    if (value === '[') {
-      if (opts.nobracket === true || !remaining().includes(']')) {
-        if (opts.nobracket !== true && opts.strictBrackets === true) {
-          throw new SyntaxError(syntaxError('closing', ']'));
-        }
-
-        value = `\\${value}`;
-      } else {
-        increment('brackets');
-      }
-
-      push({ type: 'bracket', value });
-      continue;
-    }
-
-    if (value === ']') {
-      if (opts.nobracket === true || (prev && prev.type === 'bracket' && prev.value.length === 1)) {
-        push({ type: 'text', value, output: `\\${value}` });
-        continue;
-      }
-
-      if (state.brackets === 0) {
-        if (opts.strictBrackets === true) {
-          throw new SyntaxError(syntaxError('opening', '['));
-        }
-
-        push({ type: 'text', value, output: `\\${value}` });
-        continue;
-      }
-
-      decrement('brackets');
-
-      const prevValue = prev.value.slice(1);
-      if (prev.posix !== true && prevValue[0] === '^' && !prevValue.includes('/')) {
-        value = `/${value}`;
-      }
-
-      prev.value += value;
-      append({ value });
-
-      // when literal brackets are explicitly disabled
-      // assume we should match with a regex character class
-      if (opts.literalBrackets === false || utils.hasRegexChars(prevValue)) {
-        continue;
-      }
-
-      const escaped = utils.escapeRegex(prev.value);
-      state.output = state.output.slice(0, -prev.value.length);
-
-      // when literal brackets are explicitly enabled
-      // assume we should escape the brackets to match literal characters
-      if (opts.literalBrackets === true) {
-        state.output += escaped;
-        prev.value = escaped;
-        continue;
-      }
-
-      // when the user specifies nothing, try to match both
-      prev.value = `(${capture}${escaped}|${prev.value})`;
-      state.output += prev.value;
-      continue;
-    }
-
-    /**
-     * Braces
-     */
-
-    if (value === '{' && opts.nobrace !== true) {
-      increment('braces');
-
-      const open = {
-        type: 'brace',
-        value,
-        output: '(',
-        outputIndex: state.output.length,
-        tokensIndex: state.tokens.length
-      };
-
-      braces.push(open);
-      push(open);
-      continue;
-    }
-
-    if (value === '}') {
-      const brace = braces[braces.length - 1];
-
-      if (opts.nobrace === true || !brace) {
-        push({ type: 'text', value, output: value });
-        continue;
-      }
-
-      let output = ')';
-
-      if (brace.dots === true) {
-        const arr = tokens.slice();
-        const range = [];
-
-        for (let i = arr.length - 1; i >= 0; i--) {
-          tokens.pop();
-          if (arr[i].type === 'brace') {
+        gen.if((0, codegen_1._) `${names_1.default.jsonPos} === ${names_1.default.jsonLen}`, () => gen.return(names_1.default.data));
+        jsonSyntaxError(cxt);
+    });
+}
+function parseCode(cxt) {
+    let form;
+    for (const key of types_1.jtdForms) {
+        if (key in cxt.schema) {
+            form = key;
             break;
-          }
-          if (arr[i].type !== 'dots') {
-            range.unshift(arr[i].value);
-          }
         }
-
-        output = expandRange(range, opts);
-        state.backtrack = true;
-      }
-
-      if (brace.comma !== true && brace.dots !== true) {
-        const out = state.output.slice(0, brace.outputIndex);
-        const toks = state.tokens.slice(brace.tokensIndex);
-        brace.value = brace.output = '\\{';
-        value = output = '\\}';
-        state.output = out;
-        for (const t of toks) {
-          state.output += (t.output || t.value);
+    }
+    if (form)
+        parseNullable(cxt, genParse[form]);
+    else
+        parseEmpty(cxt);
+}
+const parseBoolean = parseBooleanToken(true, parseBooleanToken(false, jsonSyntaxError));
+function parseNullable(cxt, parseForm) {
+    const { gen, schema, data } = cxt;
+    if (!schema.nullable)
+        return parseForm(cxt);
+    tryParseToken(cxt, "null", parseForm, () => gen.assign(data, null));
+}
+function parseElements(cxt) {
+    const { gen, schema, data } = cxt;
+    parseToken(cxt, "[");
+    const ix = gen.let("i", 0);
+    gen.assign(data, (0, codegen_1._) `[]`);
+    parseItems(cxt, "]", () => {
+        const el = gen.let("el");
+        parseCode({ ...cxt, schema: schema.elements, data: el });
+        gen.assign((0, codegen_1._) `${data}[${ix}++]`, el);
+    });
+}
+function parseValues(cxt) {
+    const { gen, schema, data } = cxt;
+    parseToken(cxt, "{");
+    gen.assign(data, (0, codegen_1._) `{}`);
+    parseItems(cxt, "}", () => parseKeyValue(cxt, schema.values));
+}
+function parseItems(cxt, endToken, block) {
+    tryParseItems(cxt, endToken, block);
+    parseToken(cxt, endToken);
+}
+function tryParseItems(cxt, endToken, block) {
+    const { gen } = cxt;
+    gen.for((0, codegen_1._) `;${names_1.default.jsonPos}<${names_1.default.jsonLen} && ${jsonSlice(1)}!==${endToken};`, () => {
+        block();
+        tryParseToken(cxt, ",", () => gen.break(), hasItem);
+    });
+    function hasItem() {
+        tryParseToken(cxt, endToken, () => { }, jsonSyntaxError);
+    }
+}
+function parseKeyValue(cxt, schema) {
+    const { gen } = cxt;
+    const key = gen.let("key");
+    parseString({ ...cxt, data: key });
+    parseToken(cxt, ":");
+    parsePropertyValue(cxt, key, schema);
+}
+function parseDiscriminator(cxt) {
+    const { gen, data, schema } = cxt;
+    const { discriminator, mapping } = schema;
+    parseToken(cxt, "{");
+    gen.assign(data, (0, codegen_1._) `{}`);
+    const startPos = gen.const("pos", names_1.default.jsonPos);
+    const value = gen.let("value");
+    const tag = gen.let("tag");
+    tryParseItems(cxt, "}", () => {
+        const key = gen.let("key");
+        parseString({ ...cxt, data: key });
+        parseToken(cxt, ":");
+        gen.if((0, codegen_1._) `${key} === ${discriminator}`, () => {
+            parseString({ ...cxt, data: tag });
+            gen.assign((0, codegen_1._) `${data}[${key}]`, tag);
+            gen.break();
+        }, () => parseEmpty({ ...cxt, data: value }) // can be discarded/skipped
+        );
+    });
+    gen.assign(names_1.default.jsonPos, startPos);
+    gen.if((0, codegen_1._) `${tag} === undefined`);
+    parsingError(cxt, (0, codegen_1.str) `discriminator tag not found`);
+    for (const tagValue in mapping) {
+        gen.elseIf((0, codegen_1._) `${tag} === ${tagValue}`);
+        parseSchemaProperties({ ...cxt, schema: mapping[tagValue] }, discriminator);
+    }
+    gen.else();
+    parsingError(cxt, (0, codegen_1.str) `discriminator value not in schema`);
+    gen.endIf();
+}
+function parseProperties(cxt) {
+    const { gen, data } = cxt;
+    parseToken(cxt, "{");
+    gen.assign(data, (0, codegen_1._) `{}`);
+    parseSchemaProperties(cxt);
+}
+function parseSchemaProperties(cxt, discriminator) {
+    const { gen, schema, data } = cxt;
+    const { properties, optionalProperties, additionalProperties } = schema;
+    parseItems(cxt, "}", () => {
+        const key = gen.let("key");
+        parseString({ ...cxt, data: key });
+        parseToken(cxt, ":");
+        gen.if(false);
+        parseDefinedProperty(cxt, key, properties);
+        parseDefinedProperty(cxt, key, optionalProperties);
+        if (discriminator) {
+            gen.elseIf((0, codegen_1._) `${key} === ${discriminator}`);
+            const tag = gen.let("tag");
+            parseString({ ...cxt, data: tag }); // can be discarded, it is already assigned
         }
-      }
-
-      push({ type: 'brace', value, output });
-      decrement('braces');
-      braces.pop();
-      continue;
-    }
-
-    /**
-     * Pipes
-     */
-
-    if (value === '|') {
-      if (extglobs.length > 0) {
-        extglobs[extglobs.length - 1].conditions++;
-      }
-      push({ type: 'text', value });
-      continue;
-    }
-
-    /**
-     * Commas
-     */
-
-    if (value === ',') {
-      let output = value;
-
-      const brace = braces[braces.length - 1];
-      if (brace && stack[stack.length - 1] === 'braces') {
-        brace.comma = true;
-        output = '|';
-      }
-
-      push({ type: 'comma', value, output });
-      continue;
-    }
-
-    /**
-     * Slashes
-     */
-
-    if (value === '/') {
-      // if the beginning of the glob is "./", advance the start
-      // to the current index, and don't add the "./" characters
-      // to the state. This greatly simplifies lookbehinds when
-      // checking for BOS characters like "!" and "." (not "./")
-      if (prev.type === 'dot' && state.index === state.start + 1) {
-        state.start = state.index + 1;
-        state.consumed = '';
-        state.output = '';
-        tokens.pop();
-        prev = bos; // reset "prev" to the first token
-        continue;
-      }
-
-      push({ type: 'slash', value, output: SLASH_LITERAL });
-      continue;
-    }
-
-    /**
-     * Dots
-     */
-
-    if (value === '.') {
-      if (state.braces > 0 && prev.type === 'dot') {
-        if (prev.value === '.') prev.output = DOT_LITERAL;
-        const brace = braces[braces.length - 1];
-        prev.type = 'dots';
-        prev.output += value;
-        prev.value += value;
-        brace.dots = true;
-        continue;
-      }
-
-      if ((state.braces + state.parens) === 0 && prev.type !== 'bos' && prev.type !== 'slash') {
-        push({ type: 'text', value, output: DOT_LITERAL });
-        continue;
-      }
-
-      push({ type: 'dot', value, output: DOT_LITERAL });
-      continue;
-    }
-
-    /**
-     * Question marks
-     */
-
-    if (value === '?') {
-      const isGroup = prev && prev.value === '(';
-      if (!isGroup && opts.noextglob !== true && peek() === '(' && peek(2) !== '?') {
-        extglobOpen('qmark', value);
-        continue;
-      }
-
-      if (prev && prev.type === 'paren') {
-        const next = peek();
-        let output = value;
-
-        if (next === '<' && !utils.supportsLookbehinds()) {
-          throw new Error('Node.js v10 or higher is required for regex lookbehinds');
+        gen.else();
+        if (additionalProperties) {
+            parseEmpty({ ...cxt, data: (0, codegen_1._) `${data}[${key}]` });
         }
-
-        if ((prev.value === '(' && !/[!=<:]/.test(next)) || (next === '<' && !/<([!=]|\w+>)/.test(remaining()))) {
-          output = `\\${value}`;
+        else {
+            parsingError(cxt, (0, codegen_1.str) `property ${key} not allowed`);
         }
-
-        push({ type: 'text', value, output });
-        continue;
-      }
-
-      if (opts.dot !== true && (prev.type === 'slash' || prev.type === 'bos')) {
-        push({ type: 'qmark', value, output: QMARK_NO_DOT });
-        continue;
-      }
-
-      push({ type: 'qmark', value, output: QMARK });
-      continue;
+        gen.endIf();
+    });
+    if (properties) {
+        const hasProp = (0, code_1.hasPropFunc)(gen);
+        const allProps = (0, codegen_1.and)(...Object.keys(properties).map((p) => (0, codegen_1._) `${hasProp}.call(${data}, ${p})`));
+        gen.if((0, codegen_1.not)(allProps), () => parsingError(cxt, (0, codegen_1.str) `missing required properties`));
     }
-
-    /**
-     * Exclamation
-     */
-
-    if (value === '!') {
-      if (opts.noextglob !== true && peek() === '(') {
-        if (peek(2) !== '?' || !/[!=<:]/.test(peek(3))) {
-          extglobOpen('negate', value);
-          continue;
+}
+function parseDefinedProperty(cxt, key, schemas = {}) {
+    const { gen } = cxt;
+    for (const prop in schemas) {
+        gen.elseIf((0, codegen_1._) `${key} === ${prop}`);
+        parsePropertyValue(cxt, key, schemas[prop]);
+    }
+}
+function parsePropertyValue(cxt, key, schema) {
+    parseCode({ ...cxt, schema, data: (0, codegen_1._) `${cxt.data}[${key}]` });
+}
+function parseType(cxt) {
+    const { gen, schema, data, self } = cxt;
+    switch (schema.type) {
+        case "boolean":
+            parseBoolean(cxt);
+            break;
+        case "string":
+            parseString(cxt);
+            break;
+        case "timestamp": {
+            parseString(cxt);
+            const vts = (0, util_1.useFunc)(gen, timestamp_1.default);
+            const { allowDate, parseDate } = self.opts;
+            const notValid = allowDate ? (0, codegen_1._) `!${vts}(${data}, true)` : (0, codegen_1._) `!${vts}(${data})`;
+            const fail = parseDate
+                ? (0, codegen_1.or)(notValid, (0, codegen_1._) `(${data} = new Date(${data}), false)`, (0, codegen_1._) `isNaN(${data}.valueOf())`)
+                : notValid;
+            gen.if(fail, () => parsingError(cxt, (0, codegen_1.str) `invalid timestamp`));
+            break;
         }
-      }
-
-      if (opts.nonegate !== true && state.index === 0) {
-        negate();
-        continue;
-      }
-    }
-
-    /**
-     * Plus
-     */
-
-    if (value === '+') {
-      if (opts.noextglob !== true && peek() === '(' && peek(2) !== '?') {
-        extglobOpen('plus', value);
-        continue;
-      }
-
-      if ((prev && prev.value === '(') || opts.regex === false) {
-        push({ type: 'plus', value, output: PLUS_LITERAL });
-        continue;
-      }
-
-      if ((prev && (prev.type === 'bracket' || prev.type === 'paren' || prev.type === 'brace')) || state.parens > 0) {
-        push({ type: 'plus', value });
-        continue;
-      }
-
-      push({ type: 'plus', value: PLUS_LITERAL });
-      continue;
-    }
-
-    /**
-     * Plain text
-     */
-
-    if (value === '@') {
-      if (opts.noextglob !== true && peek() === '(' && peek(2) !== '?') {
-        push({ type: 'at', extglob: true, value, output: '' });
-        continue;
-      }
-
-      push({ type: 'text', value });
-      continue;
-    }
-
-    /**
-     * Plain text
-     */
-
-    if (value !== '*') {
-      if (value === '$' || value === '^') {
-        value = `\\${value}`;
-      }
-
-      const match = REGEX_NON_SPECIAL_CHARS.exec(remaining());
-      if (match) {
-        value += match[0];
-        state.index += match[0].length;
-      }
-
-      push({ type: 'text', value });
-      continue;
-    }
-
-    /**
-     * Stars
-     */
-
-    if (prev && (prev.type === 'globstar' || prev.star === true)) {
-      prev.type = 'star';
-      prev.star = true;
-      prev.value += value;
-      prev.output = star;
-      state.backtrack = true;
-      state.globstar = true;
-      consume(value);
-      continue;
-    }
-
-    let rest = remaining();
-    if (opts.noextglob !== true && /^\([^?]/.test(rest)) {
-      extglobOpen('star', value);
-      continue;
-    }
-
-    if (prev.type === 'star') {
-      if (opts.noglobstar === true) {
-        consume(value);
-        continue;
-      }
-
-      const prior = prev.prev;
-      const before = prior.prev;
-      const isStart = prior.type === 'slash' || prior.type === 'bos';
-      const afterStar = before && (before.type === 'star' || before.type === 'globstar');
-
-      if (opts.bash === true && (!isStart || (rest[0] && rest[0] !== '/'))) {
-        push({ type: 'star', value, output: '' });
-        continue;
-      }
-
-      const isBrace = state.braces > 0 && (prior.type === 'comma' || prior.type === 'brace');
-      const isExtglob = extglobs.length && (prior.type === 'pipe' || prior.type === 'paren');
-      if (!isStart && prior.type !== 'paren' && !isBrace && !isExtglob) {
-        push({ type: 'star', value, output: '' });
-        continue;
-      }
-
-      // strip consecutive `/**/`
-      while (rest.slice(0, 3) === '/**') {
-        const after = input[state.index + 4];
-        if (after && after !== '/') {
-          break;
+        case "float32":
+        case "float64":
+            parseNumber(cxt);
+            break;
+        default: {
+            const t = schema.type;
+            if (!self.opts.int32range && (t === "int32" || t === "uint32")) {
+                parseNumber(cxt, 16); // 2 ** 53 - max safe integer
+                if (t === "uint32") {
+                    gen.if((0, codegen_1._) `${data} < 0`, () => parsingError(cxt, (0, codegen_1.str) `integer out of range`));
+                }
+            }
+            else {
+                const [min, max, maxDigits] = type_1.intRange[t];
+                parseNumber(cxt, maxDigits);
+                gen.if((0, codegen_1._) `${data} < ${min} || ${data} > ${max}`, () => parsingError(cxt, (0, codegen_1.str) `integer out of range`));
+            }
         }
-        rest = rest.slice(3);
-        consume('/**', 3);
-      }
-
-      if (prior.type === 'bos' && eos()) {
-        prev.type = 'globstar';
-        prev.value += value;
-        prev.output = globstar(opts);
-        state.output = prev.output;
-        state.globstar = true;
-        consume(value);
-        continue;
-      }
-
-      if (prior.type === 'slash' && prior.prev.type !== 'bos' && !afterStar && eos()) {
-        state.output = state.output.slice(0, -(prior.output + prev.output).length);
-        prior.output = `(?:${prior.output}`;
-
-        prev.type = 'globstar';
-        prev.output = globstar(opts) + (opts.strictSlashes ? ')' : '|$)');
-        prev.value += value;
-        state.globstar = true;
-        state.output += prior.output + prev.output;
-        consume(value);
-        continue;
-      }
-
-      if (prior.type === 'slash' && prior.prev.type !== 'bos' && rest[0] === '/') {
-        const end = rest[1] !== void 0 ? '|$' : '';
-
-        state.output = state.output.slice(0, -(prior.output + prev.output).length);
-        prior.output = `(?:${prior.output}`;
-
-        prev.type = 'globstar';
-        prev.output = `${globstar(opts)}${SLASH_LITERAL}|${SLASH_LITERAL}${end})`;
-        prev.value += value;
-
-        state.output += prior.output + prev.output;
-        state.globstar = true;
-
-        consume(value + advance());
-
-        push({ type: 'slash', value: '/', output: '' });
-        continue;
-      }
-
-      if (prior.type === 'bos' && rest[0] === '/') {
-        prev.type = 'globstar';
-        prev.value += value;
-        prev.output = `(?:^|${SLASH_LITERAL}|${globstar(opts)}${SLASH_LITERAL})`;
-        state.output = prev.output;
-        state.globstar = true;
-        consume(value + advance());
-        push({ type: 'slash', value: '/', output: '' });
-        continue;
-      }
-
-      // remove single star from output
-      state.output = state.output.slice(0, -prev.output.length);
-
-      // reset previous token to globstar
-      prev.type = 'globstar';
-      prev.output = globstar(opts);
-      prev.value += value;
-
-      // reset output with globstar
-      state.output += prev.output;
-      state.globstar = true;
-      consume(value);
-      continue;
     }
-
-    const token = { type: 'star', value, output: star };
-
-    if (opts.bash === true) {
-      token.output = '.*?';
-      if (prev.type === 'bos' || prev.type === 'slash') {
-        token.output = nodot + token.output;
-      }
-      push(token);
-      continue;
+}
+function parseString(cxt) {
+    parseToken(cxt, '"');
+    parseWith(cxt, parseJson_1.parseJsonString);
+}
+function parseEnum(cxt) {
+    const { gen, data, schema } = cxt;
+    const enumSch = schema.enum;
+    parseToken(cxt, '"');
+    // TODO loopEnum
+    gen.if(false);
+    for (const value of enumSch) {
+        const valueStr = JSON.stringify(value).slice(1); // remove starting quote
+        gen.elseIf((0, codegen_1._) `${jsonSlice(valueStr.length)} === ${valueStr}`);
+        gen.assign(data, (0, codegen_1.str) `${value}`);
+        gen.add(names_1.default.jsonPos, valueStr.length);
     }
-
-    if (prev && (prev.type === 'bracket' || prev.type === 'paren') && opts.regex === true) {
-      token.output = value;
-      push(token);
-      continue;
-    }
-
-    if (state.index === state.start || prev.type === 'slash' || prev.type === 'dot') {
-      if (prev.type === 'dot') {
-        state.output += NO_DOT_SLASH;
-        prev.output += NO_DOT_SLASH;
-
-      } else if (opts.dot === true) {
-        state.output += NO_DOTS_SLASH;
-        prev.output += NO_DOTS_SLASH;
-
-      } else {
-        state.output += nodot;
-        prev.output += nodot;
-      }
-
-      if (peek() !== '*') {
-        state.output += ONE_CHAR;
-        prev.output += ONE_CHAR;
-      }
-    }
-
-    push(token);
-  }
-
-  while (state.brackets > 0) {
-    if (opts.strictBrackets === true) throw new SyntaxError(syntaxError('closing', ']'));
-    state.output = utils.escapeLast(state.output, '[');
-    decrement('brackets');
-  }
-
-  while (state.parens > 0) {
-    if (opts.strictBrackets === true) throw new SyntaxError(syntaxError('closing', ')'));
-    state.output = utils.escapeLast(state.output, '(');
-    decrement('parens');
-  }
-
-  while (state.braces > 0) {
-    if (opts.strictBrackets === true) throw new SyntaxError(syntaxError('closing', '}'));
-    state.output = utils.escapeLast(state.output, '{');
-    decrement('braces');
-  }
-
-  if (opts.strictSlashes !== true && (prev.type === 'star' || prev.type === 'bracket')) {
-    push({ type: 'maybe_slash', value: '', output: `${SLASH_LITERAL}?` });
-  }
-
-  // rebuild the output if we had to backtrack at any point
-  if (state.backtrack === true) {
-    state.output = '';
-
-    for (const token of state.tokens) {
-      state.output += token.output != null ? token.output : token.value;
-
-      if (token.suffix) {
-        state.output += token.suffix;
-      }
-    }
-  }
-
-  return state;
-};
-
-/**
- * Fast paths for creating regular expressions for common glob patterns.
- * This can significantly speed up processing and has very little downside
- * impact when none of the fast paths match.
- */
-
-parse.fastpaths = (input, options) => {
-  const opts = { ...options };
-  const max = typeof opts.maxLength === 'number' ? Math.min(MAX_LENGTH, opts.maxLength) : MAX_LENGTH;
-  const len = input.length;
-  if (len > max) {
-    throw new SyntaxError(`Input length: ${len}, exceeds maximum allowed length: ${max}`);
-  }
-
-  input = REPLACEMENTS[input] || input;
-  const win32 = utils.isWindows(options);
-
-  // create constants based on platform, for windows or posix
-  const {
-    DOT_LITERAL,
-    SLASH_LITERAL,
-    ONE_CHAR,
-    DOTS_SLASH,
-    NO_DOT,
-    NO_DOTS,
-    NO_DOTS_SLASH,
-    STAR,
-    START_ANCHOR
-  } = constants.globChars(win32);
-
-  const nodot = opts.dot ? NO_DOTS : NO_DOT;
-  const slashDot = opts.dot ? NO_DOTS_SLASH : NO_DOT;
-  const capture = opts.capture ? '' : '?:';
-  const state = { negated: false, prefix: '' };
-  let star = opts.bash === true ? '.*?' : STAR;
-
-  if (opts.capture) {
-    star = `(${star})`;
-  }
-
-  const globstar = opts => {
-    if (opts.noglobstar === true) return star;
-    return `(${capture}(?:(?!${START_ANCHOR}${opts.dot ? DOTS_SLASH : DOT_LITERAL}).)*?)`;
-  };
-
-  const create = str => {
-    switch (str) {
-      case '*':
-        return `${nodot}${ONE_CHAR}${star}`;
-
-      case '.*':
-        return `${DOT_LITERAL}${ONE_CHAR}${star}`;
-
-      case '*.*':
-        return `${nodot}${star}${DOT_LITERAL}${ONE_CHAR}${star}`;
-
-      case '*/*':
-        return `${nodot}${star}${SLASH_LITERAL}${ONE_CHAR}${slashDot}${star}`;
-
-      case '**':
-        return nodot + globstar(opts);
-
-      case '**/*':
-        return `(?:${nodot}${globstar(opts)}${SLASH_LITERAL})?${slashDot}${ONE_CHAR}${star}`;
-
-      case '**/*.*':
-        return `(?:${nodot}${globstar(opts)}${SLASH_LITERAL})?${slashDot}${star}${DOT_LITERAL}${ONE_CHAR}${star}`;
-
-      case '**/.*':
-        return `(?:${nodot}${globstar(opts)}${SLASH_LITERAL})?${DOT_LITERAL}${ONE_CHAR}${star}`;
-
-      default: {
-        const match = /^(.*?)\.(\w+)$/.exec(str);
-        if (!match) return;
-
-        const source = create(match[1]);
-        if (!source) return;
-
-        return source + DOT_LITERAL + match[2];
-      }
-    }
-  };
-
-  const output = utils.removePrefix(input, state);
-  let source = create(output);
-
-  if (source && opts.strictSlashes !== true) {
-    source += `${SLASH_LITERAL}?`;
-  }
-
-  return source;
-};
-
-module.exports = parse;
+    gen.else();
+    jsonSyntaxError(cxt);
+    gen.endIf();
+}
+function parseNumber(cxt, maxDigits) {
+    const { gen } = cxt;
+    skipWhitespace(cxt);
+    gen.if((0, codegen_1._) `"-0123456789".indexOf(${jsonSlice(1)}) < 0`, () => jsonSyntaxError(cxt), () => parseWith(cxt, parseJson_1.parseJsonNumber, maxDigits));
+}
+function parseBooleanToken(bool, fail) {
+    return (cxt) => {
+        const { gen, data } = cxt;
+        tryParseToken(cxt, `${bool}`, () => fail(cxt), () => gen.assign(data, bool));
+    };
+}
+function parseRef(cxt) {
+    const { gen, self, definitions, schema, schemaEnv } = cxt;
+    const { ref } = schema;
+    const refSchema = definitions[ref];
+    if (!refSchema)
+        throw new ref_error_1.default(self.opts.uriResolver, "", ref, `No definition ${ref}`);
+    if (!(0, ref_1.hasRef)(refSchema))
+        return parseCode({ ...cxt, schema: refSchema });
+    const { root } = schemaEnv;
+    const sch = compileParser.call(self, new __1.SchemaEnv({ schema: refSchema, root }), definitions);
+    partialParse(cxt, getParser(gen, sch), true);
+}
+function getParser(gen, sch) {
+    return sch.parse
+        ? gen.scopeValue("parse", { ref: sch.parse })
+        : (0, codegen_1._) `${gen.scopeValue("wrapper", { ref: sch })}.parse`;
+}
+function parseEmpty(cxt) {
+    parseWith(cxt, parseJson_1.parseJson);
+}
+function parseWith(cxt, parseFunc, args) {
+    partialParse(cxt, (0, util_1.useFunc)(cxt.gen, parseFunc), args);
+}
+function partialParse(cxt, parseFunc, args) {
+    const { gen, data } = cxt;
+    gen.assign(data, (0, codegen_1._) `${parseFunc}(${names_1.default.json}, ${names_1.default.jsonPos}${args ? (0, codegen_1._) `, ${args}` : codegen_1.nil})`);
+    gen.assign(names_1.default.jsonPos, (0, codegen_1._) `${parseFunc}.position`);
+    gen.if((0, codegen_1._) `${data} === undefined`, () => parsingError(cxt, (0, codegen_1._) `${parseFunc}.message`));
+}
+function parseToken(cxt, tok) {
+    tryParseToken(cxt, tok, jsonSyntaxError);
+}
+function tryParseToken(cxt, tok, fail, success) {
+    const { gen } = cxt;
+    const n = tok.length;
+    skipWhitespace(cxt);
+    gen.if((0, codegen_1._) `${jsonSlice(n)} === ${tok}`, () => {
+        gen.add(names_1.default.jsonPos, n);
+        success === null || success === void 0 ? void 0 : success(cxt);
+    }, () => fail(cxt));
+}
+function skipWhitespace({ gen, char: c }) {
+    gen.code((0, codegen_1._) `while((${c}=${names_1.default.json}[${names_1.default.jsonPos}],${c}===" "||${c}==="\\n"||${c}==="\\r"||${c}==="\\t"))${names_1.default.jsonPos}++;`);
+}
+function jsonSlice(len) {
+    return len === 1
+        ? (0, codegen_1._) `${names_1.default.json}[${names_1.default.jsonPos}]`
+        : (0, codegen_1._) `${names_1.default.json}.slice(${names_1.default.jsonPos}, ${names_1.default.jsonPos}+${len})`;
+}
+function jsonSyntaxError(cxt) {
+    parsingError(cxt, (0, codegen_1._) `"unexpected token " + ${names_1.default.json}[${names_1.default.jsonPos}]`);
+}
+function parsingError({ gen, parseName }, msg) {
+    gen.assign((0, codegen_1._) `${parseName}.message`, msg);
+    gen.assign((0, codegen_1._) `${parseName}.position`, names_1.default.jsonPos);
+    gen.return(undef);
+}
+//# sourceMappingURL=parse.js.map

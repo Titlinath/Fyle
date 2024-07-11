@@ -1,105 +1,35 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.defaultLoadersSync = exports.defaultLoaders = exports.metaSearchPlaces = exports.globalConfigSearchPlacesSync = exports.globalConfigSearchPlaces = exports.getDefaultSearchPlacesSync = exports.getDefaultSearchPlaces = void 0;
-const loaders_1 = require("./loaders");
-function getDefaultSearchPlaces(moduleName) {
-    return [
-        'package.json',
-        `.${moduleName}rc`,
-        `.${moduleName}rc.json`,
-        `.${moduleName}rc.yaml`,
-        `.${moduleName}rc.yml`,
-        `.${moduleName}rc.js`,
-        `.${moduleName}rc.ts`,
-        `.${moduleName}rc.cjs`,
-        `.${moduleName}rc.mjs`,
-        `.config/${moduleName}rc`,
-        `.config/${moduleName}rc.json`,
-        `.config/${moduleName}rc.yaml`,
-        `.config/${moduleName}rc.yml`,
-        `.config/${moduleName}rc.js`,
-        `.config/${moduleName}rc.ts`,
-        `.config/${moduleName}rc.cjs`,
-        `.config/${moduleName}rc.mjs`,
-        `${moduleName}.config.js`,
-        `${moduleName}.config.ts`,
-        `${moduleName}.config.cjs`,
-        `${moduleName}.config.mjs`,
-    ];
+exports.assignDefaults = void 0;
+const codegen_1 = require("../codegen");
+const util_1 = require("../util");
+function assignDefaults(it, ty) {
+    const { properties, items } = it.schema;
+    if (ty === "object" && properties) {
+        for (const key in properties) {
+            assignDefault(it, key, properties[key].default);
+        }
+    }
+    else if (ty === "array" && Array.isArray(items)) {
+        items.forEach((sch, i) => assignDefault(it, i, sch.default));
+    }
 }
-exports.getDefaultSearchPlaces = getDefaultSearchPlaces;
-function getDefaultSearchPlacesSync(moduleName) {
-    return [
-        'package.json',
-        `.${moduleName}rc`,
-        `.${moduleName}rc.json`,
-        `.${moduleName}rc.yaml`,
-        `.${moduleName}rc.yml`,
-        `.${moduleName}rc.js`,
-        `.${moduleName}rc.ts`,
-        `.${moduleName}rc.cjs`,
-        `.config/${moduleName}rc`,
-        `.config/${moduleName}rc.json`,
-        `.config/${moduleName}rc.yaml`,
-        `.config/${moduleName}rc.yml`,
-        `.config/${moduleName}rc.js`,
-        `.config/${moduleName}rc.ts`,
-        `.config/${moduleName}rc.cjs`,
-        `${moduleName}.config.js`,
-        `${moduleName}.config.ts`,
-        `${moduleName}.config.cjs`,
-    ];
+exports.assignDefaults = assignDefaults;
+function assignDefault(it, prop, defaultValue) {
+    const { gen, compositeRule, data, opts } = it;
+    if (defaultValue === undefined)
+        return;
+    const childData = (0, codegen_1._) `${data}${(0, codegen_1.getProperty)(prop)}`;
+    if (compositeRule) {
+        (0, util_1.checkStrictMode)(it, `default is ignored for: ${childData}`);
+        return;
+    }
+    let condition = (0, codegen_1._) `${childData} === undefined`;
+    if (opts.useDefaults === "empty") {
+        condition = (0, codegen_1._) `${condition} || ${childData} === null || ${childData} === ""`;
+    }
+    // `${childData} === undefined` +
+    // (opts.useDefaults === "empty" ? ` || ${childData} === null || ${childData} === ""` : "")
+    gen.if(condition, (0, codegen_1._) `${childData} = ${(0, codegen_1.stringify)(defaultValue)}`);
 }
-exports.getDefaultSearchPlacesSync = getDefaultSearchPlacesSync;
-exports.globalConfigSearchPlaces = [
-    'config',
-    'config.json',
-    'config.yaml',
-    'config.yml',
-    'config.js',
-    'config.ts',
-    'config.cjs',
-    'config.mjs',
-];
-exports.globalConfigSearchPlacesSync = [
-    'config',
-    'config.json',
-    'config.yaml',
-    'config.yml',
-    'config.js',
-    'config.ts',
-    'config.cjs',
-];
-// this needs to be hardcoded, as this is intended for end users, who can't supply options at this point
-exports.metaSearchPlaces = [
-    'package.json',
-    'package.yaml',
-    '.config/config.json',
-    '.config/config.yaml',
-    '.config/config.yml',
-    '.config/config.js',
-    '.config/config.ts',
-    '.config/config.cjs',
-    '.config/config.mjs',
-];
-// do not allow mutation of default loaders. Make sure it is set inside options
-exports.defaultLoaders = Object.freeze({
-    '.mjs': loaders_1.loadJs,
-    '.cjs': loaders_1.loadJs,
-    '.js': loaders_1.loadJs,
-    '.ts': loaders_1.loadTs,
-    '.json': loaders_1.loadJson,
-    '.yaml': loaders_1.loadYaml,
-    '.yml': loaders_1.loadYaml,
-    noExt: loaders_1.loadYaml,
-});
-exports.defaultLoadersSync = Object.freeze({
-    '.cjs': loaders_1.loadJsSync,
-    '.js': loaders_1.loadJsSync,
-    '.ts': loaders_1.loadTsSync,
-    '.json': loaders_1.loadJson,
-    '.yaml': loaders_1.loadYaml,
-    '.yml': loaders_1.loadYaml,
-    noExt: loaders_1.loadYaml,
-});
 //# sourceMappingURL=defaults.js.map

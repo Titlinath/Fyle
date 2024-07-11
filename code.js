@@ -1,131 +1,155 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.validateUnion = exports.validateArray = exports.usePattern = exports.callValidateCode = exports.schemaProperties = exports.allSchemaProperties = exports.noPropertyInData = exports.propertyInData = exports.isOwnProperty = exports.hasPropFunc = exports.reportMissingProp = exports.checkMissingProp = exports.checkReportMissingProp = void 0;
-const codegen_1 = require("../compile/codegen");
-const util_1 = require("../compile/util");
-const names_1 = require("../compile/names");
-const util_2 = require("../compile/util");
-function checkReportMissingProp(cxt, prop) {
-    const { gen, data, it } = cxt;
-    gen.if(noPropertyInData(gen, data, prop, it.opts.ownProperties), () => {
-        cxt.setParams({ missingProperty: (0, codegen_1._) `${prop}` }, true);
-        cxt.error();
-    });
+exports.regexpCode = exports.getEsmExportName = exports.getProperty = exports.safeStringify = exports.stringify = exports.strConcat = exports.addCodeArg = exports.str = exports._ = exports.nil = exports._Code = exports.Name = exports.IDENTIFIER = exports._CodeOrName = void 0;
+class _CodeOrName {
 }
-exports.checkReportMissingProp = checkReportMissingProp;
-function checkMissingProp({ gen, data, it: { opts } }, properties, missing) {
-    return (0, codegen_1.or)(...properties.map((prop) => (0, codegen_1.and)(noPropertyInData(gen, data, prop, opts.ownProperties), (0, codegen_1._) `${missing} = ${prop}`)));
-}
-exports.checkMissingProp = checkMissingProp;
-function reportMissingProp(cxt, missing) {
-    cxt.setParams({ missingProperty: missing }, true);
-    cxt.error();
-}
-exports.reportMissingProp = reportMissingProp;
-function hasPropFunc(gen) {
-    return gen.scopeValue("func", {
-        // eslint-disable-next-line @typescript-eslint/unbound-method
-        ref: Object.prototype.hasOwnProperty,
-        code: (0, codegen_1._) `Object.prototype.hasOwnProperty`,
-    });
-}
-exports.hasPropFunc = hasPropFunc;
-function isOwnProperty(gen, data, property) {
-    return (0, codegen_1._) `${hasPropFunc(gen)}.call(${data}, ${property})`;
-}
-exports.isOwnProperty = isOwnProperty;
-function propertyInData(gen, data, property, ownProperties) {
-    const cond = (0, codegen_1._) `${data}${(0, codegen_1.getProperty)(property)} !== undefined`;
-    return ownProperties ? (0, codegen_1._) `${cond} && ${isOwnProperty(gen, data, property)}` : cond;
-}
-exports.propertyInData = propertyInData;
-function noPropertyInData(gen, data, property, ownProperties) {
-    const cond = (0, codegen_1._) `${data}${(0, codegen_1.getProperty)(property)} === undefined`;
-    return ownProperties ? (0, codegen_1.or)(cond, (0, codegen_1.not)(isOwnProperty(gen, data, property))) : cond;
-}
-exports.noPropertyInData = noPropertyInData;
-function allSchemaProperties(schemaMap) {
-    return schemaMap ? Object.keys(schemaMap).filter((p) => p !== "__proto__") : [];
-}
-exports.allSchemaProperties = allSchemaProperties;
-function schemaProperties(it, schemaMap) {
-    return allSchemaProperties(schemaMap).filter((p) => !(0, util_1.alwaysValidSchema)(it, schemaMap[p]));
-}
-exports.schemaProperties = schemaProperties;
-function callValidateCode({ schemaCode, data, it: { gen, topSchemaRef, schemaPath, errorPath }, it }, func, context, passSchema) {
-    const dataAndSchema = passSchema ? (0, codegen_1._) `${schemaCode}, ${data}, ${topSchemaRef}${schemaPath}` : data;
-    const valCxt = [
-        [names_1.default.instancePath, (0, codegen_1.strConcat)(names_1.default.instancePath, errorPath)],
-        [names_1.default.parentData, it.parentData],
-        [names_1.default.parentDataProperty, it.parentDataProperty],
-        [names_1.default.rootData, names_1.default.rootData],
-    ];
-    if (it.opts.dynamicRef)
-        valCxt.push([names_1.default.dynamicAnchors, names_1.default.dynamicAnchors]);
-    const args = (0, codegen_1._) `${dataAndSchema}, ${gen.object(...valCxt)}`;
-    return context !== codegen_1.nil ? (0, codegen_1._) `${func}.call(${context}, ${args})` : (0, codegen_1._) `${func}(${args})`;
-}
-exports.callValidateCode = callValidateCode;
-const newRegExp = (0, codegen_1._) `new RegExp`;
-function usePattern({ gen, it: { opts } }, pattern) {
-    const u = opts.unicodeRegExp ? "u" : "";
-    const { regExp } = opts.code;
-    const rx = regExp(pattern, u);
-    return gen.scopeValue("pattern", {
-        key: rx.toString(),
-        ref: rx,
-        code: (0, codegen_1._) `${regExp.code === "new RegExp" ? newRegExp : (0, util_2.useFunc)(gen, regExp)}(${pattern}, ${u})`,
-    });
-}
-exports.usePattern = usePattern;
-function validateArray(cxt) {
-    const { gen, data, keyword, it } = cxt;
-    const valid = gen.name("valid");
-    if (it.allErrors) {
-        const validArr = gen.let("valid", true);
-        validateItems(() => gen.assign(validArr, false));
-        return validArr;
+exports._CodeOrName = _CodeOrName;
+exports.IDENTIFIER = /^[a-z$_][a-z$_0-9]*$/i;
+class Name extends _CodeOrName {
+    constructor(s) {
+        super();
+        if (!exports.IDENTIFIER.test(s))
+            throw new Error("CodeGen: name must be a valid identifier");
+        this.str = s;
     }
-    gen.var(valid, true);
-    validateItems(() => gen.break());
-    return valid;
-    function validateItems(notValid) {
-        const len = gen.const("len", (0, codegen_1._) `${data}.length`);
-        gen.forRange("i", 0, len, (i) => {
-            cxt.subschema({
-                keyword,
-                dataProp: i,
-                dataPropType: util_1.Type.Num,
-            }, valid);
-            gen.if((0, codegen_1.not)(valid), notValid);
-        });
+    toString() {
+        return this.str;
+    }
+    emptyStr() {
+        return false;
+    }
+    get names() {
+        return { [this.str]: 1 };
     }
 }
-exports.validateArray = validateArray;
-function validateUnion(cxt) {
-    const { gen, schema, keyword, it } = cxt;
-    /* istanbul ignore if */
-    if (!Array.isArray(schema))
-        throw new Error("ajv implementation error");
-    const alwaysValid = schema.some((sch) => (0, util_1.alwaysValidSchema)(it, sch));
-    if (alwaysValid && !it.opts.unevaluated)
+exports.Name = Name;
+class _Code extends _CodeOrName {
+    constructor(code) {
+        super();
+        this._items = typeof code === "string" ? [code] : code;
+    }
+    toString() {
+        return this.str;
+    }
+    emptyStr() {
+        if (this._items.length > 1)
+            return false;
+        const item = this._items[0];
+        return item === "" || item === '""';
+    }
+    get str() {
+        var _a;
+        return ((_a = this._str) !== null && _a !== void 0 ? _a : (this._str = this._items.reduce((s, c) => `${s}${c}`, "")));
+    }
+    get names() {
+        var _a;
+        return ((_a = this._names) !== null && _a !== void 0 ? _a : (this._names = this._items.reduce((names, c) => {
+            if (c instanceof Name)
+                names[c.str] = (names[c.str] || 0) + 1;
+            return names;
+        }, {})));
+    }
+}
+exports._Code = _Code;
+exports.nil = new _Code("");
+function _(strs, ...args) {
+    const code = [strs[0]];
+    let i = 0;
+    while (i < args.length) {
+        addCodeArg(code, args[i]);
+        code.push(strs[++i]);
+    }
+    return new _Code(code);
+}
+exports._ = _;
+const plus = new _Code("+");
+function str(strs, ...args) {
+    const expr = [safeStringify(strs[0])];
+    let i = 0;
+    while (i < args.length) {
+        expr.push(plus);
+        addCodeArg(expr, args[i]);
+        expr.push(plus, safeStringify(strs[++i]));
+    }
+    optimize(expr);
+    return new _Code(expr);
+}
+exports.str = str;
+function addCodeArg(code, arg) {
+    if (arg instanceof _Code)
+        code.push(...arg._items);
+    else if (arg instanceof Name)
+        code.push(arg);
+    else
+        code.push(interpolate(arg));
+}
+exports.addCodeArg = addCodeArg;
+function optimize(expr) {
+    let i = 1;
+    while (i < expr.length - 1) {
+        if (expr[i] === plus) {
+            const res = mergeExprItems(expr[i - 1], expr[i + 1]);
+            if (res !== undefined) {
+                expr.splice(i - 1, 3, res);
+                continue;
+            }
+            expr[i++] = "+";
+        }
+        i++;
+    }
+}
+function mergeExprItems(a, b) {
+    if (b === '""')
+        return a;
+    if (a === '""')
+        return b;
+    if (typeof a == "string") {
+        if (b instanceof Name || a[a.length - 1] !== '"')
+            return;
+        if (typeof b != "string")
+            return `${a.slice(0, -1)}${b}"`;
+        if (b[0] === '"')
+            return a.slice(0, -1) + b.slice(1);
         return;
-    const valid = gen.let("valid", false);
-    const schValid = gen.name("_valid");
-    gen.block(() => schema.forEach((_sch, i) => {
-        const schCxt = cxt.subschema({
-            keyword,
-            schemaProp: i,
-            compositeRule: true,
-        }, schValid);
-        gen.assign(valid, (0, codegen_1._) `${valid} || ${schValid}`);
-        const merged = cxt.mergeValidEvaluated(schCxt, schValid);
-        // can short-circuit if `unevaluatedProperties/Items` not supported (opts.unevaluated !== true)
-        // or if all properties and items were evaluated (it.props === true && it.items === true)
-        if (!merged)
-            gen.if((0, codegen_1.not)(valid));
-    }));
-    cxt.result(valid, () => cxt.reset(), () => cxt.error(true));
+    }
+    if (typeof b == "string" && b[0] === '"' && !(a instanceof Name))
+        return `"${a}${b.slice(1)}`;
+    return;
 }
-exports.validateUnion = validateUnion;
+function strConcat(c1, c2) {
+    return c2.emptyStr() ? c1 : c1.emptyStr() ? c2 : str `${c1}${c2}`;
+}
+exports.strConcat = strConcat;
+// TODO do not allow arrays here
+function interpolate(x) {
+    return typeof x == "number" || typeof x == "boolean" || x === null
+        ? x
+        : safeStringify(Array.isArray(x) ? x.join(",") : x);
+}
+function stringify(x) {
+    return new _Code(safeStringify(x));
+}
+exports.stringify = stringify;
+function safeStringify(x) {
+    return JSON.stringify(x)
+        .replace(/\u2028/g, "\\u2028")
+        .replace(/\u2029/g, "\\u2029");
+}
+exports.safeStringify = safeStringify;
+function getProperty(key) {
+    return typeof key == "string" && exports.IDENTIFIER.test(key) ? new _Code(`.${key}`) : _ `[${key}]`;
+}
+exports.getProperty = getProperty;
+//Does best effort to format the name properly
+function getEsmExportName(key) {
+    if (typeof key == "string" && exports.IDENTIFIER.test(key)) {
+        return new _Code(`${key}`);
+    }
+    throw new Error(`CodeGen: invalid export name: ${key}, use explicit $id name mapping`);
+}
+exports.getEsmExportName = getEsmExportName;
+function regexpCode(rx) {
+    return new _Code(rx.toString());
+}
+exports.regexpCode = regexpCode;
 //# sourceMappingURL=code.js.map

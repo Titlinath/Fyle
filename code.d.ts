@@ -1,17 +1,40 @@
-import type { SchemaMap } from "../types";
-import type { SchemaCxt } from "../compile";
-import type { KeywordCxt } from "../compile/validate";
-import { CodeGen, Code, Name } from "../compile/codegen";
-export declare function checkReportMissingProp(cxt: KeywordCxt, prop: string): void;
-export declare function checkMissingProp({ gen, data, it: { opts } }: KeywordCxt, properties: string[], missing: Name): Code;
-export declare function reportMissingProp(cxt: KeywordCxt, missing: Name): void;
-export declare function hasPropFunc(gen: CodeGen): Name;
-export declare function isOwnProperty(gen: CodeGen, data: Name, property: Name | string): Code;
-export declare function propertyInData(gen: CodeGen, data: Name, property: Name | string, ownProperties?: boolean): Code;
-export declare function noPropertyInData(gen: CodeGen, data: Name, property: Name | string, ownProperties?: boolean): Code;
-export declare function allSchemaProperties(schemaMap?: SchemaMap): string[];
-export declare function schemaProperties(it: SchemaCxt, schemaMap: SchemaMap): string[];
-export declare function callValidateCode({ schemaCode, data, it: { gen, topSchemaRef, schemaPath, errorPath }, it }: KeywordCxt, func: Code, context: Code, passSchema?: boolean): Code;
-export declare function usePattern({ gen, it: { opts } }: KeywordCxt, pattern: string): Name;
-export declare function validateArray(cxt: KeywordCxt): Name;
-export declare function validateUnion(cxt: KeywordCxt): void;
+export declare abstract class _CodeOrName {
+    abstract readonly str: string;
+    abstract readonly names: UsedNames;
+    abstract toString(): string;
+    abstract emptyStr(): boolean;
+}
+export declare const IDENTIFIER: RegExp;
+export declare class Name extends _CodeOrName {
+    readonly str: string;
+    constructor(s: string);
+    toString(): string;
+    emptyStr(): boolean;
+    get names(): UsedNames;
+}
+export declare class _Code extends _CodeOrName {
+    readonly _items: readonly CodeItem[];
+    private _str?;
+    private _names?;
+    constructor(code: string | readonly CodeItem[]);
+    toString(): string;
+    emptyStr(): boolean;
+    get str(): string;
+    get names(): UsedNames;
+}
+export type CodeItem = Name | string | number | boolean | null;
+export type UsedNames = Record<string, number | undefined>;
+export type Code = _Code | Name;
+export type SafeExpr = Code | number | boolean | null;
+export declare const nil: _Code;
+type CodeArg = SafeExpr | string | undefined;
+export declare function _(strs: TemplateStringsArray, ...args: CodeArg[]): _Code;
+export declare function str(strs: TemplateStringsArray, ...args: (CodeArg | string[])[]): _Code;
+export declare function addCodeArg(code: CodeItem[], arg: CodeArg | string[]): void;
+export declare function strConcat(c1: Code, c2: Code): Code;
+export declare function stringify(x: unknown): Code;
+export declare function safeStringify(x: unknown): string;
+export declare function getProperty(key: Code | string | number): Code;
+export declare function getEsmExportName(key: Code | string | number): Code;
+export declare function regexpCode(rx: RegExp): Code;
+export {};
