@@ -4,28 +4,20 @@
 	"extends": "@ljharb",
 
 	"rules": {
-		"indent": [2, 4],
-		"max-statements-per-line": 1,
-		"no-param-reassign": 1,
-		"sort-keys": 0,
-		"strict": 1,
+		"complexity": 0,
+		"id-length": 0,
+		"new-cap": ["error", {
+			"capIsNewExceptions": [
+				"GetIntrinsic",
+			],
+		}],
 	},
-
-	"ignorePatterns": [
-		"build/",
-	],
 
 	"overrides": [
 		{
-			"files": "examples/**",
-			"rules": {
-				"no-console": 0,
-			},
-		},
-		{
 			"files": "test/**",
 			"rules": {
-				"no-redeclare": 1,
+				"max-lines-per-function": "off",
 			},
 		},
 	],

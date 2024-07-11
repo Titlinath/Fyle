@@ -1,14 +1,12 @@
-// Copyright 2017 Lovell Fuller and others.
-// SPDX-License-Identifier: Apache-2.0
 
-export const GLIBC: 'glibc';
-export const MUSL: 'musl';
+declare function defineDataProperty(
+    obj: Record<PropertyKey, unknown>,
+    property: keyof typeof obj,
+    value: typeof obj[typeof property],
+    nonEnumerable?: boolean | null,
+    nonWritable?: boolean | null,
+    nonConfigurable?: boolean | null,
+    loose?: boolean
+): void;
 
-export function family(): Promise<string | null>;
-export function familySync(): string | null;
-
-export function isNonGlibcLinux(): Promise<boolean>;
-export function isNonGlibcLinuxSync(): boolean;
-
-export function version(): Promise<string | null>;
-export function versionSync(): string | null;
+export = defineDataProperty;

@@ -1,77 +1,18 @@
-/*!
- * depd
- * Copyright(c) 2015 Douglas Christopher Wilson
- * MIT Licensed
- */
+import {promisify} from 'node:util';
+import process from 'node:process';
+import {execFile} from 'node:child_process';
 
-'use strict'
+const execFileAsync = promisify(execFile);
 
-/**
- * Module exports.
- * @public
- */
+export default async function defaultBrowserId() {
+	if (process.platform !== 'darwin') {
+		throw new Error('macOS only');
+	}
 
-module.exports = depd
+	const {stdout} = await execFileAsync('defaults', ['read', 'com.apple.LaunchServices/com.apple.launchservices.secure', 'LSHandlers']);
 
-/**
- * Create deprecate for namespace in caller.
- */
+	// `(?!-)` is to prevent matching `LSHandlerRoleAll = "-";`.
+	const match = /LSHandlerRoleAll = "(?!-)(?<id>[^"]+?)";\s+?LSHandlerURLScheme = (?:http|https);/.exec(stdout);
 
-function depd (namespace) {
-  if (!namespace) {
-    throw new TypeError('argument namespace is required')
-  }
-
-  function deprecate (message) {
-    // no-op in browser
-  }
-
-  deprecate._file = undefined
-  deprecate._ignored = true
-  deprecate._namespace = namespace
-  deprecate._traced = false
-  deprecate._warned = Object.create(null)
-
-  deprecate.function = wrapfunction
-  deprecate.property = wrapproperty
-
-  return deprecate
-}
-
-/**
- * Return a wrapped function in a deprecation message.
- *
- * This is a no-op version of the wrapper, which does nothing but call
- * validation.
- */
-
-function wrapfunction (fn, message) {
-  if (typeof fn !== 'function') {
-    throw new TypeError('argument fn must be a function')
-  }
-
-  return fn
-}
-
-/**
- * Wrap property in a deprecation message.
- *
- * This is a no-op version of the wrapper, which does nothing but call
- * validation.
- */
-
-function wrapproperty (obj, prop, message) {
-  if (!obj || (typeof obj !== 'object' && typeof obj !== 'function')) {
-    throw new TypeError('argument obj must be object')
-  }
-
-  var descriptor = Object.getOwnPropertyDescriptor(obj, prop)
-
-  if (!descriptor) {
-    throw new TypeError('must call property on owner object')
-  }
-
-  if (!descriptor.configurable) {
-    throw new TypeError('property must be configurable')
-  }
+	return match?.groups.id ?? 'com.apple.Safari';
 }
