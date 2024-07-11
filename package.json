@@ -1,41 +1,46 @@
 {
-  "name": "escape-string-regexp",
-  "version": "1.0.5",
-  "description": "Escape RegExp special characters",
-  "license": "MIT",
-  "repository": "sindresorhus/escape-string-regexp",
-  "author": {
-    "name": "Sindre Sorhus",
-    "email": "sindresorhus@gmail.com",
-    "url": "sindresorhus.com"
-  },
-  "maintainers": [
-    "Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com)",
-    "Joshua Boy Nicolai Appelman <joshua@jbna.nl> (jbna.nl)"
-  ],
-  "engines": {
-    "node": ">=0.8.0"
+  "name": "esbuild",
+  "version": "0.21.5",
+  "description": "An extremely fast JavaScript and CSS bundler and minifier.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/evanw/esbuild.git"
   },
   "scripts": {
-    "test": "xo && ava"
+    "postinstall": "node install.js"
   },
-  "files": [
-    "index.js"
-  ],
-  "keywords": [
-    "escape",
-    "regex",
-    "regexp",
-    "re",
-    "regular",
-    "expression",
-    "string",
-    "str",
-    "special",
-    "characters"
-  ],
-  "devDependencies": {
-    "ava": "*",
-    "xo": "*"
-  }
+  "main": "lib/main.js",
+  "types": "lib/main.d.ts",
+  "engines": {
+    "node": ">=12"
+  },
+  "bin": {
+    "esbuild": "bin/esbuild"
+  },
+  "optionalDependencies": {
+    "@esbuild/aix-ppc64": "0.21.5",
+    "@esbuild/android-arm": "0.21.5",
+    "@esbuild/android-arm64": "0.21.5",
+    "@esbuild/android-x64": "0.21.5",
+    "@esbuild/darwin-arm64": "0.21.5",
+    "@esbuild/darwin-x64": "0.21.5",
+    "@esbuild/freebsd-arm64": "0.21.5",
+    "@esbuild/freebsd-x64": "0.21.5",
+    "@esbuild/linux-arm": "0.21.5",
+    "@esbuild/linux-arm64": "0.21.5",
+    "@esbuild/linux-ia32": "0.21.5",
+    "@esbuild/linux-loong64": "0.21.5",
+    "@esbuild/linux-mips64el": "0.21.5",
+    "@esbuild/linux-ppc64": "0.21.5",
+    "@esbuild/linux-riscv64": "0.21.5",
+    "@esbuild/linux-s390x": "0.21.5",
+    "@esbuild/linux-x64": "0.21.5",
+    "@esbuild/netbsd-x64": "0.21.5",
+    "@esbuild/openbsd-x64": "0.21.5",
+    "@esbuild/sunos-x64": "0.21.5",
+    "@esbuild/win32-arm64": "0.21.5",
+    "@esbuild/win32-ia32": "0.21.5",
+    "@esbuild/win32-x64": "0.21.5"
+  },
+  "license": "MIT"
 }

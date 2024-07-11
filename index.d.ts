@@ -1,3 +1,2 @@
-declare const defineProperty: false | typeof Object.defineProperty;
-
-export = defineProperty;
+export type Callback = (directory: string, files: string[]) => string | false | void;
+export default function (directory: string, callback: Callback): string | void;

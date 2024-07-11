@@ -1,11 +1,18 @@
-'use strict';
+const { dirname, resolve } = require('path');
+const { readdirSync, statSync } = require('fs');
 
-var matchOperatorsRe = /[|\\{}()[\]^$+*?.]/g;
+module.exports = function (start, callback) {
+	let dir = resolve('.', start);
+	let tmp, stats = statSync(dir);
 
-module.exports = function (str) {
-	if (typeof str !== 'string') {
-		throw new TypeError('Expected a string');
+	if (!stats.isDirectory()) {
+		dir = dirname(dir);
 	}
 
-	return str.replace(matchOperatorsRe, '\\$&');
-};
+	while (true) {
+		tmp = callback(dir, readdirSync(dir));
+		if (tmp) return resolve(dir, tmp);
+		dir = dirname(tmp = dir);
+		if (tmp === dir) break;
+	}
+}
