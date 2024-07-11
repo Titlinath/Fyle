@@ -1,73 +1,103 @@
-
-2.2.1 / 2015-11-05
+2.0.0 / 2018-10-26
 ==================
 
-  * bump extend and void-elements (@shinnn, #1)
+  * Drop support for Node.js 0.6
+  * Replace internal `eval` usage with `Function` constructor
+  * Use instance methods on `process` to check for listeners
 
-2.2.0 / 2015-02-13
+1.1.2 / 2018-01-11
 ==================
 
-  * add support for passing `encode()` options in to `serializeAttribute()` and `serializeTextNode()`
+  * perf: remove argument reassignment
+  * Support Node.js 0.6 to 9.x
 
-2.1.0 / 2015-02-10
+1.1.1 / 2017-07-27
 ==================
 
-  * if `e.detail.serialize` is set and the event is cancelled, still use the `e.detail.serialize` value
-  * attempting to get 100% test code coverage
-  * package: allow any "zuul" v1
-  * test: add HTML5 Doctype test, for 100% test code coverage!
-  * test: remove `console.log()` call
+  * Remove unnecessary `Buffer` loading
+  * Support Node.js 0.6 to 8.x
 
-2.0.1 / 2015-02-03
+1.1.0 / 2015-09-14
 ==================
 
-  * index: support Nodes with children for `e.detail.serialize`
+  * Enable strict mode in more places
+  * Support io.js 3.x
+  * Support io.js 2.x
+  * Support web browser loading
+    - Requires bundler like Browserify or webpack
 
-2.0.0 / 2015-02-03
+1.0.1 / 2015-04-07
 ==================
 
-  * README: update for `serializeTarget`
-  * index: emit the "serialize" event on the node that we know is in the DOM
+  * Fix `TypeError`s when under `'use strict'` code
+  * Fix useless type name on auto-generated messages
+  * Support io.js 1.x
+  * Support Node.js 0.12
 
-1.2.1 / 2015-02-03
+1.0.0 / 2014-09-17
 ==================
 
-  * fix one-time callback functions on NodeLists / Arrays
-  * README: fix weird spacing
-  * README: add "inspect" example to readme
+  * No changes
 
-1.2.0 / 2015-02-02
+0.4.5 / 2014-09-09
 ==================
 
-  * add support for one-time "serialize" callback functions
-  * add support for a "context" argument
-  * index: make `serializeDoctype()` more readable
-  * README: fix typo in example output
-  * README: better description
+  * Improve call speed to functions using the function wrapper
+  * Support Node.js 0.6
 
-1.1.0 / 2015-01-16
+0.4.4 / 2014-07-27
 ==================
 
-  * add support for Comment, Document, Doctype, DocumentFragment and NodeList types to be serialized
-  * add .travis.yml file
-  * add Makefile for zuul tests
-  * add README.md file
-  * index: run `e.detail.serialize` through all the serialize() logic
-  * index: use += operator for String concatentation (faster)
-  * index: use `require('ent/encode')` syntax
-  * package: update "ent" to v2.2.0
-  * package: rename to "dom-serialize"
-  * test: add Array serialize test
+  * Work-around v8 generating empty stack traces
 
-1.0.0 / 2015-01-15
+0.4.3 / 2014-07-26
 ==================
 
-  * index: add support for Nodes to be set on `e.data.serialize`
-  * index: remove redundant `break` statements
-  * test: add `e.detail.serialize` Node and Number tests
-  * test: add "serialize" event tests
-  * test: add initial test cases
-  * package: add "string" as a keyword
-  * package: add "zuul" as a dev dependency
-  * package: use ~ for dep versions
-  * initial commit
+  * Fix exception when global `Error.stackTraceLimit` is too low
+
+0.4.2 / 2014-07-19
+==================
+
+  * Correct call site for wrapped functions and properties
+
+0.4.1 / 2014-07-19
+==================
+
+  * Improve automatic message generation for function properties
+
+0.4.0 / 2014-07-19
+==================
+
+  * Add `TRACE_DEPRECATION` environment variable
+  * Remove non-standard grey color from color output
+  * Support `--no-deprecation` argument
+  * Support `--trace-deprecation` argument
+  * Support `deprecate.property(fn, prop, message)`
+
+0.3.0 / 2014-06-16
+==================
+
+  * Add `NO_DEPRECATION` environment variable
+
+0.2.0 / 2014-06-15
+==================
+
+  * Add `deprecate.property(obj, prop, message)`
+  * Remove `supports-color` dependency for node.js 0.8
+
+0.1.0 / 2014-06-15
+==================
+
+  * Add `deprecate.function(fn, message)`
+  * Add `process.on('deprecation', fn)` emitter
+  * Automatically generate message when omitted from `deprecate()`
+
+0.0.1 / 2014-06-15
+==================
+
+  * Fix warning for dynamic calls at singe call site
+
+0.0.0 / 2014-06-15
+==================
+
+  * Initial implementation
