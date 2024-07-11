@@ -1,13 +1,3 @@
-var defaultAlphabet = 'abcdefghijklmnopqrstuvwxyz0123456789';
-
-function str(length, alphabet) {
-  alphabet = alphabet || defaultAlphabet;
-  var str = '';
-  var alphabetLength = alphabet.length;
-  for (var i = 0; i < length; i++) {
-    str += alphabet.charAt(Math.floor(Math.random() * alphabetLength));
-  }
-  return str;
-}
-
-exports.str = str;
+var stringify = require('../');
+var obj = { c: 6, b: [4,5], a: 3 };
+console.log(stringify(obj));
