@@ -1,230 +1,97 @@
-/*!
- * express
- * Copyright(c) 2009-2013 TJ Holowaychuk
- * Copyright(c) 2013 Roman Shtylman
- * Copyright(c) 2014-2015 Douglas Christopher Wilson
- * MIT Licensed
- */
+const conversions = require('./conversions');
 
-'use strict';
+/*
+	This function routes a model to all other models.
 
-/**
- * Module dependencies.
- * @private
- */
+	all functions that are routed have a property `.conversion` attached
+	to the returned synthetic function. This property is an array
+	of strings, each with the steps in between the 'from' and 'to'
+	color models (inclusive).
 
-var debug = require('debug')('express:router:route');
-var flatten = require('array-flatten');
-var Layer = require('./layer');
-var methods = require('methods');
+	conversions that are not possible simply are not included.
+*/
 
-/**
- * Module variables.
- * @private
- */
+function buildGraph() {
+	const graph = {};
+	// https://jsperf.com/object-keys-vs-for-in-with-closure/3
+	const models = Object.keys(conversions);
 
-var slice = Array.prototype.slice;
-var toString = Object.prototype.toString;
+	for (let len = models.length, i = 0; i < len; i++) {
+		graph[models[i]] = {
+			// http://jsperf.com/1-vs-infinity
+			// micro-opt, but this is simple.
+			distance: -1,
+			parent: null
+		};
+	}
 
-/**
- * Module exports.
- * @public
- */
-
-module.exports = Route;
-
-/**
- * Initialize `Route` with the given `path`,
- *
- * @param {String} path
- * @public
- */
-
-function Route(path) {
-  this.path = path;
-  this.stack = [];
-
-  debug('new %o', path)
-
-  // route handlers for various http methods
-  this.methods = {};
+	return graph;
 }
 
-/**
- * Determine if the route handles a given method.
- * @private
- */
+// https://en.wikipedia.org/wiki/Breadth-first_search
+function deriveBFS(fromModel) {
+	const graph = buildGraph();
+	const queue = [fromModel]; // Unshift -> queue -> pop
 
-Route.prototype._handles_method = function _handles_method(method) {
-  if (this.methods._all) {
-    return true;
-  }
+	graph[fromModel].distance = 0;
 
-  // normalize name
-  var name = typeof method === 'string'
-    ? method.toLowerCase()
-    : method
+	while (queue.length) {
+		const current = queue.pop();
+		const adjacents = Object.keys(conversions[current]);
 
-  if (name === 'head' && !this.methods['head']) {
-    name = 'get';
-  }
+		for (let len = adjacents.length, i = 0; i < len; i++) {
+			const adjacent = adjacents[i];
+			const node = graph[adjacent];
 
-  return Boolean(this.methods[name]);
+			if (node.distance === -1) {
+				node.distance = graph[current].distance + 1;
+				node.parent = current;
+				queue.unshift(adjacent);
+			}
+		}
+	}
+
+	return graph;
+}
+
+function link(from, to) {
+	return function (args) {
+		return to(from(args));
+	};
+}
+
+function wrapConversion(toModel, graph) {
+	const path = [graph[toModel].parent, toModel];
+	let fn = conversions[graph[toModel].parent][toModel];
+
+	let cur = graph[toModel].parent;
+	while (graph[cur].parent) {
+		path.unshift(graph[cur].parent);
+		fn = link(conversions[graph[cur].parent][cur], fn);
+		cur = graph[cur].parent;
+	}
+
+	fn.conversion = path;
+	return fn;
+}
+
+module.exports = function (fromModel) {
+	const graph = deriveBFS(fromModel);
+	const conversion = {};
+
+	const models = Object.keys(graph);
+	for (let len = models.length, i = 0; i < len; i++) {
+		const toModel = models[i];
+		const node = graph[toModel];
+
+		if (node.parent === null) {
+			// No possible conversion, or this node is the source model.
+			continue;
+		}
+
+		conversion[toModel] = wrapConversion(toModel, graph);
+	}
+
+	return conversion;
 };
 
-/**
- * @return {Array} supported HTTP methods
- * @private
- */
-
-Route.prototype._options = function _options() {
-  var methods = Object.keys(this.methods);
-
-  // append automatic head
-  if (this.methods.get && !this.methods.head) {
-    methods.push('head');
-  }
-
-  for (var i = 0; i < methods.length; i++) {
-    // make upper case
-    methods[i] = methods[i].toUpperCase();
-  }
-
-  return methods;
-};
-
-/**
- * dispatch req, res into this route
- * @private
- */
-
-Route.prototype.dispatch = function dispatch(req, res, done) {
-  var idx = 0;
-  var stack = this.stack;
-  var sync = 0
-
-  if (stack.length === 0) {
-    return done();
-  }
-  var method = typeof req.method === 'string'
-    ? req.method.toLowerCase()
-    : req.method
-
-  if (method === 'head' && !this.methods['head']) {
-    method = 'get';
-  }
-
-  req.route = this;
-
-  next();
-
-  function next(err) {
-    // signal to exit route
-    if (err && err === 'route') {
-      return done();
-    }
-
-    // signal to exit router
-    if (err && err === 'router') {
-      return done(err)
-    }
-
-    // max sync stack
-    if (++sync > 100) {
-      return setImmediate(next, err)
-    }
-
-    var layer = stack[idx++]
-
-    // end of layers
-    if (!layer) {
-      return done(err)
-    }
-
-    if (layer.method && layer.method !== method) {
-      next(err)
-    } else if (err) {
-      layer.handle_error(err, req, res, next);
-    } else {
-      layer.handle_request(req, res, next);
-    }
-
-    sync = 0
-  }
-};
-
-/**
- * Add a handler for all HTTP verbs to this route.
- *
- * Behaves just like middleware and can respond or call `next`
- * to continue processing.
- *
- * You can use multiple `.all` call to add multiple handlers.
- *
- *   function check_something(req, res, next){
- *     next();
- *   };
- *
- *   function validate_user(req, res, next){
- *     next();
- *   };
- *
- *   route
- *   .all(validate_user)
- *   .all(check_something)
- *   .get(function(req, res, next){
- *     res.send('hello world');
- *   });
- *
- * @param {function} handler
- * @return {Route} for chaining
- * @api public
- */
-
-Route.prototype.all = function all() {
-  var handles = flatten(slice.call(arguments));
-
-  for (var i = 0; i < handles.length; i++) {
-    var handle = handles[i];
-
-    if (typeof handle !== 'function') {
-      var type = toString.call(handle);
-      var msg = 'Route.all() requires a callback function but got a ' + type
-      throw new TypeError(msg);
-    }
-
-    var layer = Layer('/', {}, handle);
-    layer.method = undefined;
-
-    this.methods._all = true;
-    this.stack.push(layer);
-  }
-
-  return this;
-};
-
-methods.forEach(function(method){
-  Route.prototype[method] = function(){
-    var handles = flatten(slice.call(arguments));
-
-    for (var i = 0; i < handles.length; i++) {
-      var handle = handles[i];
-
-      if (typeof handle !== 'function') {
-        var type = toString.call(handle);
-        var msg = 'Route.' + method + '() requires a callback function but got a ' + type
-        throw new Error(msg);
-      }
-
-      debug('%s %o', method, this.path)
-
-      var layer = Layer('/', {}, handle);
-      layer.method = method;
-
-      this.methods[method] = true;
-      this.stack.push(layer);
-    }
-
-    return this;
-  };
-});

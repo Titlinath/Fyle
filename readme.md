@@ -1,69 +1,76 @@
-# css-what
+# supports-color [![Build Status](https://travis-ci.org/chalk/supports-color.svg?branch=master)](https://travis-ci.org/chalk/supports-color)
 
-[![Build Status](https://img.shields.io/github/workflow/status/fb55/css-what/Node.js%20CI/master)](https://github.com/fb55/css-what/actions/workflows/nodejs-test.yml)
-[![Coverage](https://img.shields.io/coveralls/github/fb55/css-what/master)](https://coveralls.io/github/fb55/css-what?branch=master)
+> Detect whether a terminal supports color
 
-A CSS selector parser.
 
-## Example
+## Install
+
+```
+$ npm install supports-color
+```
+
+
+## Usage
 
 ```js
-import * as CSSwhat from "css-what";
+const supportsColor = require('supports-color');
 
-CSSwhat.parse("foo[bar]:baz")
+if (supportsColor.stdout) {
+	console.log('Terminal stdout supports color');
+}
 
-~> [
-    [
-        { type: "tag", name: "foo" },
-        {
-            type: "attribute",
-            name: "bar",
-            action: "exists",
-            value: "",
-            ignoreCase: null
-        },
-        { type: "pseudo", name: "baz", data: null }
-    ]
-]
+if (supportsColor.stdout.has256) {
+	console.log('Terminal stdout supports 256 colors');
+}
+
+if (supportsColor.stderr.has16m) {
+	console.log('Terminal stderr supports 16 million colors (truecolor)');
+}
 ```
+
 
 ## API
 
-**`CSSwhat.parse(selector)` - Parses `selector`.**
+Returns an `Object` with a `stdout` and `stderr` property for testing either streams. Each property is an `Object`, or `false` if color is not supported.
 
-The function returns a two-dimensional array. The first array represents selectors separated by commas (eg. `sub1, sub2`), the second contains the relevant tokens for that selector. Possible token types are:
+The `stdout`/`stderr` objects specifies a level of support for color through a `.level` property and a corresponding flag:
 
-| name                | properties                              | example       | output                                                                                   |
-| ------------------- | --------------------------------------- | ------------- | ---------------------------------------------------------------------------------------- |
-| `tag`               | `name`                                  | `div`         | `{ type: 'tag', name: 'div' }`                                                           |
-| `universal`         | -                                       | `*`           | `{ type: 'universal' }`                                                                  |
-| `pseudo`            | `name`, `data`                          | `:name(data)` | `{ type: 'pseudo', name: 'name', data: 'data' }`                                         |
-| `pseudo`            | `name`, `data`                          | `:name`       | `{ type: 'pseudo', name: 'name', data: null }`                                           |
-| `pseudo-element`    | `name`                                  | `::name`      | `{ type: 'pseudo-element', name: 'name' }`                                               |
-| `attribute`         | `name`, `action`, `value`, `ignoreCase` | `[attr]`      | `{ type: 'attribute', name: 'attr', action: 'exists', value: '', ignoreCase: false }`    |
-| `attribute`         | `name`, `action`, `value`, `ignoreCase` | `[attr=val]`  | `{ type: 'attribute', name: 'attr', action: 'equals', value: 'val', ignoreCase: false }` |
-| `attribute`         | `name`, `action`, `value`, `ignoreCase` | `[attr^=val]` | `{ type: 'attribute', name: 'attr', action: 'start', value: 'val', ignoreCase: false }`  |
-| `attribute`         | `name`, `action`, `value`, `ignoreCase` | `[attr$=val]` | `{ type: 'attribute', name: 'attr', action: 'end', value: 'val', ignoreCase: false }`    |
-| `child`             | -                                       | `>`           | `{ type: 'child' }`                                                                      |
-| `parent`            | -                                       | `<`           | `{ type: 'parent' }`                                                                     |
-| `sibling`           | -                                       | `~`           | `{ type: 'sibling' }`                                                                    |
-| `adjacent`          | -                                       | `+`           | `{ type: 'adjacent' }`                                                                   |
-| `descendant`        | -                                       |               | `{ type: 'descendant' }`                                                                 |
-| `column-combinator` | -                                       | `\|\|`        | `{ type: 'column-combinator' }`                                                          |
+- `.level = 1` and `.hasBasic = true`: Basic color support (16 colors)
+- `.level = 2` and `.has256 = true`: 256 color support
+- `.level = 3` and `.has16m = true`: Truecolor support (16 million colors)
 
-**`CSSwhat.stringify(selector)` - Turns `selector` back into a string.**
+
+## Info
+
+It obeys the `--color` and `--no-color` CLI flags.
+
+For situations where using `--color` is not possible, use the environment variable `FORCE_COLOR=1` (level 1), `FORCE_COLOR=2` (level 2), or `FORCE_COLOR=3` (level 3) to forcefully enable color, or `FORCE_COLOR=0` to forcefully disable. The use of `FORCE_COLOR` overrides all other color support checks.
+
+Explicit 256/Truecolor mode can be enabled using the `--color=256` and `--color=16m` flags, respectively.
+
+
+## Related
+
+- [supports-color-cli](https://github.com/chalk/supports-color-cli) - CLI for this module
+- [chalk](https://github.com/chalk/chalk) - Terminal string styling done right
+
+
+## Maintainers
+
+- [Sindre Sorhus](https://github.com/sindresorhus)
+- [Josh Junon](https://github.com/qix-)
+
 
 ---
 
-License: BSD-2-Clause
+<div align="center">
+	<b>
+		<a href="https://tidelift.com/subscription/pkg/npm-supports-color?utm_source=npm-supports-color&utm_medium=referral&utm_campaign=readme">Get professional support for this package with a Tidelift subscription</a>
+	</b>
+	<br>
+	<sub>
+		Tidelift helps make open source sustainable for maintainers while giving companies<br>assurances about security, maintenance, and licensing for their dependencies.
+	</sub>
+</div>
 
-## Security contact information
-
-To report a security vulnerability, please use the [Tidelift security contact](https://tidelift.com/security).
-Tidelift will coordinate the fix and disclosure.
-
-## `css-what` for enterprise
-
-Available as part of the Tidelift Subscription
-
-The maintainers of `css-what` and thousands of other packages are working with Tidelift to deliver commercial support and maintenance for the open source dependencies you use to build your applications. Save time, reduce risk, and improve code health, while paying the maintainers of the exact dependencies you use. [Learn more.](https://tidelift.com/subscription/pkg/npm-css-what?utm_source=npm-css-what&utm_medium=referral&utm_campaign=enterprise&utm_term=repo)
+---

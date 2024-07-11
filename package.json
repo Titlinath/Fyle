@@ -1,43 +1,53 @@
 {
-  "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me)",
-  "name": "which",
-  "description": "Like which(1) unix command. Find the first instance of an executable in the PATH.",
-  "version": "2.0.2",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/isaacs/node-which.git"
-  },
-  "main": "which.js",
-  "bin": {
-    "node-which": "./bin/node-which"
-  },
-  "license": "ISC",
-  "dependencies": {
-    "isexe": "^2.0.0"
-  },
-  "devDependencies": {
-    "mkdirp": "^0.5.0",
-    "rimraf": "^2.6.2",
-    "tap": "^14.6.9"
-  },
-  "scripts": {
-    "test": "tap",
-    "preversion": "npm test",
-    "postversion": "npm publish",
-    "prepublish": "npm run changelog",
-    "prechangelog": "bash gen-changelog.sh",
-    "changelog": "git add CHANGELOG.md",
-    "postchangelog": "git commit -m 'update changelog - '${npm_package_version}",
-    "postpublish": "git push origin --follow-tags"
-  },
-  "files": [
-    "which.js",
-    "bin/node-which"
-  ],
-  "tap": {
-    "check-coverage": true
-  },
-  "engines": {
-    "node": ">= 8"
-  }
+	"name": "supports-color",
+	"version": "7.2.0",
+	"description": "Detect whether a terminal supports color",
+	"license": "MIT",
+	"repository": "chalk/supports-color",
+	"author": {
+		"name": "Sindre Sorhus",
+		"email": "sindresorhus@gmail.com",
+		"url": "sindresorhus.com"
+	},
+	"engines": {
+		"node": ">=8"
+	},
+	"scripts": {
+		"test": "xo && ava"
+	},
+	"files": [
+		"index.js",
+		"browser.js"
+	],
+	"keywords": [
+		"color",
+		"colour",
+		"colors",
+		"terminal",
+		"console",
+		"cli",
+		"ansi",
+		"styles",
+		"tty",
+		"rgb",
+		"256",
+		"shell",
+		"xterm",
+		"command-line",
+		"support",
+		"supports",
+		"capability",
+		"detect",
+		"truecolor",
+		"16m"
+	],
+	"dependencies": {
+		"has-flag": "^4.0.0"
+	},
+	"devDependencies": {
+		"ava": "^1.4.1",
+		"import-fresh": "^3.0.0",
+		"xo": "^0.24.0"
+	},
+	"browser": "browser.js"
 }
