@@ -1,43 +1,12 @@
-export declare const xmlReplacer: RegExp;
-export declare const getCodePoint: (str: string, index: number) => number;
+import { MinimatchOptions } from './index.js';
 /**
- * Encodes all non-ASCII characters, as well as characters not valid in XML
- * documents using XML entities.
+ * Escape all magic characters in a glob pattern.
  *
- * If a character has no equivalent entity, a
- * numeric hexadecimal reference (eg. `&#xfc;`) will be used.
+ * If the {@link windowsPathsNoEscape | GlobOptions.windowsPathsNoEscape}
+ * option is used, then characters are escaped by wrapping in `[]`, because
+ * a magic character wrapped in a character class can only be satisfied by
+ * that exact character.  In this mode, `\` is _not_ escaped, because it is
+ * not interpreted as a magic character, but instead as a path separator.
  */
-export declare function encodeXML(str: string): string;
-/**
- * Encodes all non-ASCII characters, as well as characters not valid in XML
- * documents using numeric hexadecimal reference (eg. `&#xfc;`).
- *
- * Have a look at `escapeUTF8` if you want a more concise output at the expense
- * of reduced transportability.
- *
- * @param data String to escape.
- */
-export declare const escape: typeof encodeXML;
-/**
- * Encodes all characters not valid in XML documents using XML entities.
- *
- * Note that the output will be character-set dependent.
- *
- * @param data String to escape.
- */
-export declare const escapeUTF8: (data: string) => string;
-/**
- * Encodes all characters that have to be escaped in HTML attributes,
- * following {@link https://html.spec.whatwg.org/multipage/parsing.html#escapingString}.
- *
- * @param data String to escape.
- */
-export declare const escapeAttribute: (data: string) => string;
-/**
- * Encodes all characters that have to be escaped in HTML text,
- * following {@link https://html.spec.whatwg.org/multipage/parsing.html#escapingString}.
- *
- * @param data String to escape.
- */
-export declare const escapeText: (data: string) => string;
+export declare const escape: (s: string, { windowsPathsNoEscape, }?: Pick<MinimatchOptions, 'windowsPathsNoEscape'>) => string;
 //# sourceMappingURL=escape.d.ts.map
