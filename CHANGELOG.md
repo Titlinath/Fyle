@@ -1,362 +1,70 @@
+v5.1.1 - September 12, 2020
 
-2.6.9 / 2017-09-22
-==================
+* [`9b528d7`](https://github.com/eslint/eslint-scope/commit/9b528d778c381718c12dabfb7f1c0e0dc6b36e49) Upgrade: esrecurse version to ^4.3.0 (#64) (Timofey Kachalov)
+* [`f758bbc`](https://github.com/eslint/eslint-scope/commit/f758bbc3d49b9b9ea2289a5d6a6bba8dcf2c4903) Chore: fix definiton -> definition typo in comments (#63) (Kevin Kirsche)
+* [`7513734`](https://github.com/eslint/eslint-scope/commit/751373473375b3f2edc4eaf1c8d2763d8435bb72) Chore: move to GitHub Actions (#62) (Kai Cataldo)
 
-  * remove ReDoS regexp in %o formatter (#504)
+v5.1.0 - June 4, 2020
 
-2.6.8 / 2017-05-18
-==================
+* [`d4a3764`](https://github.com/eslint/eslint-scope/commit/d4a376434b16289c1a428d7e304576e997520873) Update: support new export syntax (#56) (Toru Nagashima)
 
-  * Fix: Check for undefined on browser globals (#462, @marbemac)
+v5.0.0 - July 20, 2019
 
-2.6.7 / 2017-05-16
-==================
+* [`e9fa22e`](https://github.com/eslint/eslint-scope/commit/e9fa22ea412c26cf2761fa98af7e715644bdb464) Upgrade: update dependencies after dropping support for Node <8 (#53) (Kai Cataldo)
+* [`ee9f7c1`](https://github.com/eslint/eslint-scope/commit/ee9f7c12721aa195ba7e0e69551f49bfdb479951) Breaking: drop support for Node v6 (#54) (Kai Cataldo)
 
-  * Fix: Update ms to 2.0.0 to fix regular expression denial of service vulnerability (#458, @hubdotcom)
-  * Fix: Inline extend function in node implementation (#452, @dougwilson)
-  * Docs: Fix typo (#455, @msasad)
+v4.0.3 - March 15, 2019
 
-2.6.5 / 2017-04-27
-==================
-  
-  * Fix: null reference check on window.documentElement.style.WebkitAppearance (#447, @thebigredgeek)
-  * Misc: clean up browser reference checks (#447, @thebigredgeek)
-  * Misc: add npm-debug.log to .gitignore (@thebigredgeek)
+* [`299df64`](https://github.com/eslint/eslint-scope/commit/299df64bdafb30b4d9372e4b7af0cf51a3818c4a) Fix: arrow function scope strictness (take 2) (#52) (futpib)
 
+v4.0.2 - March 1, 2019
 
-2.6.4 / 2017-04-20
-==================
+* [`c925600`](https://github.com/eslint/eslint-scope/commit/c925600a684ae0f71b96f85339437a43b4d50d99) Revert "Fix: Arrow function scope strictness (fixes #49) (#50)" (#51) (Teddy Katz)
 
-  * Fix: bug that would occure if process.env.DEBUG is a non-string value. (#444, @LucianBuzzo)
-  * Chore: ignore bower.json in npm installations. (#437, @joaovieira)
-  * Misc: update "ms" to v0.7.3 (@tootallnate)
+v4.0.1 - March 1, 2019
 
-2.6.3 / 2017-03-13
-==================
+* [`2533966`](https://github.com/eslint/eslint-scope/commit/2533966faf317df5a3847fab937ba462c16808b8) Fix: Arrow function scope strictness (fixes #49) (#50) (futpib)
+* [`0cbeea5`](https://github.com/eslint/eslint-scope/commit/0cbeea51dfb66ab88ea34b0e3b4ad5e6cc210f2f) Chore: add supported Node.js versions to CI (#47) (Kai Cataldo)
+* [`b423057`](https://github.com/eslint/eslint-scope/commit/b42305760638b8edf4667acf1445e450869bd983) Upgrade: eslint-release@1.0.0 (#46) (Teddy Katz)
 
-  * Fix: Electron reference to `process.env.DEBUG` (#431, @paulcbetts)
-  * Docs: Changelog fix (@thebigredgeek)
+v4.0.0 - June 21, 2018
 
-2.6.2 / 2017-03-10
-==================
 
-  * Fix: DEBUG_MAX_ARRAY_LENGTH (#420, @slavaGanzin)
-  * Docs: Add backers and sponsors from Open Collective (#422, @piamancini)
-  * Docs: Add Slackin invite badge (@tootallnate)
 
-2.6.1 / 2017-02-10
-==================
+v4.0.0-rc.0 - June 9, 2018
 
-  * Fix: Module's `export default` syntax fix for IE8 `Expected identifier` error
-  * Fix: Whitelist DEBUG_FD for values 1 and 2 only (#415, @pi0)
-  * Fix: IE8 "Expected identifier" error (#414, @vgoma)
-  * Fix: Namespaces would not disable once enabled (#409, @musikov)
+* 3b919b8 Build: Adding rc release script to package.json (#38) (Kevin Partington)
+* 137732a Chore: avoid creating package-lock.json files (#37) (Teddy Katz)
 
-2.6.0 / 2016-12-28
-==================
+v4.0.0-alpha.0 - April 27, 2018
 
-  * Fix: added better null pointer checks for browser useColors (@thebigredgeek)
-  * Improvement: removed explicit `window.debug` export (#404, @tootallnate)
-  * Improvement: deprecated `DEBUG_FD` environment variable (#405, @tootallnate)
+* 7cc3769 Upgrade: eslint-release ^0.11.1 (#36) (Teddy Katz)
+* c9f6967 Breaking: remove TDZScope (refs eslint/eslint#10245) (#35) (Toru Nagashima)
+* 982a71f Fix: wrong resolution about default parameters (#33) (Toru Nagashima)
+* 57889f1 Docs: Remove extra header line from LICENSE (#32) (Gyandeep Singh)
 
-2.5.2 / 2016-12-25
-==================
+v3.7.1 - April 12, 2017
 
-  * Fix: reference error on window within webworkers (#393, @KlausTrainer)
-  * Docs: fixed README typo (#391, @lurch)
-  * Docs: added notice about v3 api discussion (@thebigredgeek)
+* ced6262 Fix: restore previous Scope API exports from escope (#31) (Vitor Balocco)
+* 5c3d966 Fix: Remove and Modify tests that contain invalid ES6 syntax (#29) (Reyad Attiyat)
 
-2.5.1 / 2016-12-20
-==================
+v3.7.0 - March 17, 2017
 
-  * Fix: babel-core compatibility
+* 9e27835 Chore: Add files section to package.json (#24) (Ilya Volodin)
+* 3e4d123 Upgrade: eslint-config-eslint to 4.0.0 (#21) (Teddy Katz)
+* 38c50fb Chore: Rename src to lib and test to tests (#20) (Corbin Uselton)
+* f4cd920 Chore: Remove esprima (#19) (Corbin Uselton)
+* f81fad5 Revert "Chore: Remove esprima" (#18) (James Henry)
+* 31b0085 Chore: Remove es6-map and es6-weakmap as they are included in node4 (#10) (#13) (Corbin Uselton)
+* 12a1ca1 Add Makefile.js and eslint (#15) (Reyad Attiyat)
+* 7d23f8e Chore: Remove es6-map and es6-weakmap as they are included in node4 (#10) (Corbin Uselton)
+* 019441e Chore: Convert to ES6 that is supported on Node 4, commonjs modules and remove Babel (#14) (Corbin Uselton)
+* c647f65 Update: Add check for node.body in referencer (#2) (Corbin Uselton)
+* eb5c9db Remove browserify and jsdoc (#12) (Corbin Uselton)
+* cf38df0 Chore: Update README.md (#3) (James Henry)
+* 8a142ca Chore: Add eslint-release scripts (#6) (James Henry)
+* e60d8cb Chore: Remove unused bower.json (#5) (James Henry)
+* 049c545 Chore: Fix tests for eslint-scope (#4) (James Henry)
+* f026aab Chore: Update package.json for eslint fork (#1) (James Henry)
+* a94d281 Chore: Update license with JSF copyright (Nicholas C. Zakas)
 
-2.5.0 / 2016-12-20
-==================
-
-  * Fix: wrong reference in bower file (@thebigredgeek)
-  * Fix: webworker compatibility (@thebigredgeek)
-  * Fix: output formatting issue (#388, @kribblo)
-  * Fix: babel-loader compatibility (#383, @escwald)
-  * Misc: removed built asset from repo and publications (@thebigredgeek)
-  * Misc: moved source files to /src (#378, @yamikuronue)
-  * Test: added karma integration and replaced babel with browserify for browser tests (#378, @yamikuronue)
-  * Test: coveralls integration (#378, @yamikuronue)
-  * Docs: simplified language in the opening paragraph (#373, @yamikuronue)
-
-2.4.5 / 2016-12-17
-==================
-
-  * Fix: `navigator` undefined in Rhino (#376, @jochenberger)
-  * Fix: custom log function (#379, @hsiliev)
-  * Improvement: bit of cleanup + linting fixes (@thebigredgeek)
-  * Improvement: rm non-maintainted `dist/` dir (#375, @freewil)
-  * Docs: simplified language in the opening paragraph. (#373, @yamikuronue)
-
-2.4.4 / 2016-12-14
-==================
-
-  * Fix: work around debug being loaded in preload scripts for electron (#368, @paulcbetts)
-
-2.4.3 / 2016-12-14
-==================
-
-  * Fix: navigation.userAgent error for react native (#364, @escwald)
-
-2.4.2 / 2016-12-14
-==================
-
-  * Fix: browser colors (#367, @tootallnate)
-  * Misc: travis ci integration (@thebigredgeek)
-  * Misc: added linting and testing boilerplate with sanity check (@thebigredgeek)
-
-2.4.1 / 2016-12-13
-==================
-
-  * Fix: typo that broke the package (#356)
-
-2.4.0 / 2016-12-13
-==================
-
-  * Fix: bower.json references unbuilt src entry point (#342, @justmatt)
-  * Fix: revert "handle regex special characters" (@tootallnate)
-  * Feature: configurable util.inspect()`options for NodeJS (#327, @tootallnate)
-  * Feature: %O`(big O) pretty-prints objects (#322, @tootallnate)
-  * Improvement: allow colors in workers (#335, @botverse)
-  * Improvement: use same color for same namespace. (#338, @lchenay)
-
-2.3.3 / 2016-11-09
-==================
-
-  * Fix: Catch `JSON.stringify()` errors (#195, Jovan Alleyne)
-  * Fix: Returning `localStorage` saved values (#331, Levi Thomason)
-  * Improvement: Don't create an empty object when no `process` (Nathan Rajlich)
-
-2.3.2 / 2016-11-09
-==================
-
-  * Fix: be super-safe in index.js as well (@TooTallNate)
-  * Fix: should check whether process exists (Tom Newby)
-
-2.3.1 / 2016-11-09
-==================
-
-  * Fix: Added electron compatibility (#324, @paulcbetts)
-  * Improvement: Added performance optimizations (@tootallnate)
-  * Readme: Corrected PowerShell environment variable example (#252, @gimre)
-  * Misc: Removed yarn lock file from source control (#321, @fengmk2)
-
-2.3.0 / 2016-11-07
-==================
-
-  * Fix: Consistent placement of ms diff at end of output (#215, @gorangajic)
-  * Fix: Escaping of regex special characters in namespace strings (#250, @zacronos)
-  * Fix: Fixed bug causing crash on react-native (#282, @vkarpov15)
-  * Feature: Enabled ES6+ compatible import via default export (#212 @bucaran)
-  * Feature: Added %O formatter to reflect Chrome's console.log capability (#279, @oncletom)
-  * Package: Update "ms" to 0.7.2 (#315, @DevSide)
-  * Package: removed superfluous version property from bower.json (#207 @kkirsche)
-  * Readme: fix USE_COLORS to DEBUG_COLORS
-  * Readme: Doc fixes for format string sugar (#269, @mlucool)
-  * Readme: Updated docs for DEBUG_FD and DEBUG_COLORS environment variables (#232, @mattlyons0)
-  * Readme: doc fixes for PowerShell (#271 #243, @exoticknight @unreadable)
-  * Readme: better docs for browser support (#224, @matthewmueller)
-  * Tooling: Added yarn integration for development (#317, @thebigredgeek)
-  * Misc: Renamed History.md to CHANGELOG.md (@thebigredgeek)
-  * Misc: Added license file (#226 #274, @CantemoInternal @sdaitzman)
-  * Misc: Updated contributors (@thebigredgeek)
-
-2.2.0 / 2015-05-09
-==================
-
-  * package: update "ms" to v0.7.1 (#202, @dougwilson)
-  * README: add logging to file example (#193, @DanielOchoa)
-  * README: fixed a typo (#191, @amir-s)
-  * browser: expose `storage` (#190, @stephenmathieson)
-  * Makefile: add a `distclean` target (#189, @stephenmathieson)
-
-2.1.3 / 2015-03-13
-==================
-
-  * Updated stdout/stderr example (#186)
-  * Updated example/stdout.js to match debug current behaviour
-  * Renamed example/stderr.js to stdout.js
-  * Update Readme.md (#184)
-  * replace high intensity foreground color for bold (#182, #183)
-
-2.1.2 / 2015-03-01
-==================
-
-  * dist: recompile
-  * update "ms" to v0.7.0
-  * package: update "browserify" to v9.0.3
-  * component: fix "ms.js" repo location
-  * changed bower package name
-  * updated documentation about using debug in a browser
-  * fix: security error on safari (#167, #168, @yields)
-
-2.1.1 / 2014-12-29
-==================
-
-  * browser: use `typeof` to check for `console` existence
-  * browser: check for `console.log` truthiness (fix IE 8/9)
-  * browser: add support for Chrome apps
-  * Readme: added Windows usage remarks
-  * Add `bower.json` to properly support bower install
-
-2.1.0 / 2014-10-15
-==================
-
-  * node: implement `DEBUG_FD` env variable support
-  * package: update "browserify" to v6.1.0
-  * package: add "license" field to package.json (#135, @panuhorsmalahti)
-
-2.0.0 / 2014-09-01
-==================
-
-  * package: update "browserify" to v5.11.0
-  * node: use stderr rather than stdout for logging (#29, @stephenmathieson)
-
-1.0.4 / 2014-07-15
-==================
-
-  * dist: recompile
-  * example: remove `console.info()` log usage
-  * example: add "Content-Type" UTF-8 header to browser example
-  * browser: place %c marker after the space character
-  * browser: reset the "content" color via `color: inherit`
-  * browser: add colors support for Firefox >= v31
-  * debug: prefer an instance `log()` function over the global one (#119)
-  * Readme: update documentation about styled console logs for FF v31 (#116, @wryk)
-
-1.0.3 / 2014-07-09
-==================
-
-  * Add support for multiple wildcards in namespaces (#122, @seegno)
-  * browser: fix lint
-
-1.0.2 / 2014-06-10
-==================
-
-  * browser: update color palette (#113, @gscottolson)
-  * common: make console logging function configurable (#108, @timoxley)
-  * node: fix %o colors on old node <= 0.8.x
-  * Makefile: find node path using shell/which (#109, @timoxley)
-
-1.0.1 / 2014-06-06
-==================
-
-  * browser: use `removeItem()` to clear localStorage
-  * browser, node: don't set DEBUG if namespaces is undefined (#107, @leedm777)
-  * package: add "contributors" section
-  * node: fix comment typo
-  * README: list authors
-
-1.0.0 / 2014-06-04
-==================
-
-  * make ms diff be global, not be scope
-  * debug: ignore empty strings in enable()
-  * node: make DEBUG_COLORS able to disable coloring
-  * *: export the `colors` array
-  * npmignore: don't publish the `dist` dir
-  * Makefile: refactor to use browserify
-  * package: add "browserify" as a dev dependency
-  * Readme: add Web Inspector Colors section
-  * node: reset terminal color for the debug content
-  * node: map "%o" to `util.inspect()`
-  * browser: map "%j" to `JSON.stringify()`
-  * debug: add custom "formatters"
-  * debug: use "ms" module for humanizing the diff
-  * Readme: add "bash" syntax highlighting
-  * browser: add Firebug color support
-  * browser: add colors for WebKit browsers
-  * node: apply log to `console`
-  * rewrite: abstract common logic for Node & browsers
-  * add .jshintrc file
-
-0.8.1 / 2014-04-14
-==================
-
-  * package: re-add the "component" section
-
-0.8.0 / 2014-03-30
-==================
-
-  * add `enable()` method for nodejs. Closes #27
-  * change from stderr to stdout
-  * remove unnecessary index.js file
-
-0.7.4 / 2013-11-13
-==================
-
-  * remove "browserify" key from package.json (fixes something in browserify)
-
-0.7.3 / 2013-10-30
-==================
-
-  * fix: catch localStorage security error when cookies are blocked (Chrome)
-  * add debug(err) support. Closes #46
-  * add .browser prop to package.json. Closes #42
-
-0.7.2 / 2013-02-06
-==================
-
-  * fix package.json
-  * fix: Mobile Safari (private mode) is broken with debug
-  * fix: Use unicode to send escape character to shell instead of octal to work with strict mode javascript
-
-0.7.1 / 2013-02-05
-==================
-
-  * add repository URL to package.json
-  * add DEBUG_COLORED to force colored output
-  * add browserify support
-  * fix component. Closes #24
-
-0.7.0 / 2012-05-04
-==================
-
-  * Added .component to package.json
-  * Added debug.component.js build
-
-0.6.0 / 2012-03-16
-==================
-
-  * Added support for "-" prefix in DEBUG [Vinay Pulim]
-  * Added `.enabled` flag to the node version [TooTallNate]
-
-0.5.0 / 2012-02-02
-==================
-
-  * Added: humanize diffs. Closes #8
-  * Added `debug.disable()` to the CS variant
-  * Removed padding. Closes #10
-  * Fixed: persist client-side variant again. Closes #9
-
-0.4.0 / 2012-02-01
-==================
-
-  * Added browser variant support for older browsers [TooTallNate]
-  * Added `debug.enable('project:*')` to browser variant [TooTallNate]
-  * Added padding to diff (moved it to the right)
-
-0.3.0 / 2012-01-26
-==================
-
-  * Added millisecond diff when isatty, otherwise UTC string
-
-0.2.0 / 2012-01-22
-==================
-
-  * Added wildcard support
-
-0.1.0 / 2011-12-02
-==================
-
-  * Added: remove colors unless stderr isatty [TooTallNate]
-
-0.0.1 / 2010-01-03
-==================
-
-  * Initial release

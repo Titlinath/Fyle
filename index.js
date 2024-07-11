@@ -1,131 +1,165 @@
-/*!
- * etag
- * Copyright(c) 2014-2016 Douglas Christopher Wilson
- * MIT Licensed
- */
+/*
+  Copyright (C) 2012-2014 Yusuke Suzuki <utatane.tea@gmail.com>
+  Copyright (C) 2013 Alex Seville <hi@alexanderseville.com>
+  Copyright (C) 2014 Thiago de Arruda <tpadilha84@gmail.com>
 
-'use strict'
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
 
-/**
- * Module exports.
- * @public
- */
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
 
-module.exports = etag
-
-/**
- * Module dependencies.
- * @private
- */
-
-var crypto = require('crypto')
-var Stats = require('fs').Stats
-
-/**
- * Module variables.
- * @private
- */
-
-var toString = Object.prototype.toString
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+  DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+  ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 /**
- * Generate an entity tag.
- *
- * @param {Buffer|string} entity
- * @return {string}
- * @private
+ * Escope (<a href="http://github.com/estools/escope">escope</a>) is an <a
+ * href="http://www.ecma-international.org/publications/standards/Ecma-262.htm">ECMAScript</a>
+ * scope analyzer extracted from the <a
+ * href="http://github.com/estools/esmangle">esmangle project</a/>.
+ * <p>
+ * <em>escope</em> finds lexical scopes in a source program, i.e. areas of that
+ * program where different occurrences of the same identifier refer to the same
+ * variable. With each scope the contained variables are collected, and each
+ * identifier reference in code is linked to its corresponding variable (if
+ * possible).
+ * <p>
+ * <em>escope</em> works on a syntax tree of the parsed source code which has
+ * to adhere to the <a
+ * href="https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API">
+ * Mozilla Parser API</a>. E.g. <a href="https://github.com/eslint/espree">espree</a> is a parser
+ * that produces such syntax trees.
+ * <p>
+ * The main interface is the {@link analyze} function.
+ * @module escope
  */
+"use strict";
 
-function entitytag (entity) {
-  if (entity.length === 0) {
-    // fast-path empty
-    return '"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk"'
-  }
+/* eslint no-underscore-dangle: ["error", { "allow": ["__currentScope"] }] */
 
-  // compute hash of entity
-  var hash = crypto
-    .createHash('sha1')
-    .update(entity, 'utf8')
-    .digest('base64')
-    .substring(0, 27)
+const assert = require("assert");
 
-  // compute length of entity
-  var len = typeof entity === 'string'
-    ? Buffer.byteLength(entity, 'utf8')
-    : entity.length
+const ScopeManager = require("./scope-manager");
+const Referencer = require("./referencer");
+const Reference = require("./reference");
+const Variable = require("./variable");
+const Scope = require("./scope").Scope;
+const version = require("../package.json").version;
 
-  return '"' + len.toString(16) + '-' + hash + '"'
+/**
+ * Set the default options
+ * @returns {Object} options
+ */
+function defaultOptions() {
+    return {
+        optimistic: false,
+        directive: false,
+        nodejsScope: false,
+        impliedStrict: false,
+        sourceType: "script", // one of ['script', 'module']
+        ecmaVersion: 5,
+        childVisitorKeys: null,
+        fallback: "iteration"
+    };
 }
 
 /**
- * Create a simple ETag.
- *
- * @param {string|Buffer|Stats} entity
- * @param {object} [options]
- * @param {boolean} [options.weak]
- * @return {String}
- * @public
+ * Preform deep update on option object
+ * @param {Object} target - Options
+ * @param {Object} override - Updates
+ * @returns {Object} Updated options
  */
+function updateDeeply(target, override) {
 
-function etag (entity, options) {
-  if (entity == null) {
-    throw new TypeError('argument entity is required')
-  }
+    /**
+     * Is hash object
+     * @param {Object} value - Test value
+     * @returns {boolean} Result
+     */
+    function isHashObject(value) {
+        return typeof value === "object" && value instanceof Object && !(value instanceof Array) && !(value instanceof RegExp);
+    }
 
-  // support fs.Stats object
-  var isStats = isstats(entity)
-  var weak = options && typeof options.weak === 'boolean'
-    ? options.weak
-    : isStats
+    for (const key in override) {
+        if (Object.prototype.hasOwnProperty.call(override, key)) {
+            const val = override[key];
 
-  // validate argument
-  if (!isStats && typeof entity !== 'string' && !Buffer.isBuffer(entity)) {
-    throw new TypeError('argument entity must be string, Buffer, or fs.Stats')
-  }
-
-  // generate entity tag
-  var tag = isStats
-    ? stattag(entity)
-    : entitytag(entity)
-
-  return weak
-    ? 'W/' + tag
-    : tag
+            if (isHashObject(val)) {
+                if (isHashObject(target[key])) {
+                    updateDeeply(target[key], val);
+                } else {
+                    target[key] = updateDeeply({}, val);
+                }
+            } else {
+                target[key] = val;
+            }
+        }
+    }
+    return target;
 }
 
 /**
- * Determine if object is a Stats object.
- *
- * @param {object} obj
- * @return {boolean}
- * @api private
+ * Main interface function. Takes an Espree syntax tree and returns the
+ * analyzed scopes.
+ * @function analyze
+ * @param {espree.Tree} tree - Abstract Syntax Tree
+ * @param {Object} providedOptions - Options that tailor the scope analysis
+ * @param {boolean} [providedOptions.optimistic=false] - the optimistic flag
+ * @param {boolean} [providedOptions.directive=false]- the directive flag
+ * @param {boolean} [providedOptions.ignoreEval=false]- whether to check 'eval()' calls
+ * @param {boolean} [providedOptions.nodejsScope=false]- whether the whole
+ * script is executed under node.js environment. When enabled, escope adds
+ * a function scope immediately following the global scope.
+ * @param {boolean} [providedOptions.impliedStrict=false]- implied strict mode
+ * (if ecmaVersion >= 5).
+ * @param {string} [providedOptions.sourceType='script']- the source type of the script. one of 'script' and 'module'
+ * @param {number} [providedOptions.ecmaVersion=5]- which ECMAScript version is considered
+ * @param {Object} [providedOptions.childVisitorKeys=null] - Additional known visitor keys. See [esrecurse](https://github.com/estools/esrecurse)'s the `childVisitorKeys` option.
+ * @param {string} [providedOptions.fallback='iteration'] - A kind of the fallback in order to encounter with unknown node. See [esrecurse](https://github.com/estools/esrecurse)'s the `fallback` option.
+ * @returns {ScopeManager} ScopeManager
  */
+function analyze(tree, providedOptions) {
+    const options = updateDeeply(defaultOptions(), providedOptions);
+    const scopeManager = new ScopeManager(options);
+    const referencer = new Referencer(options, scopeManager);
 
-function isstats (obj) {
-  // genuine fs.Stats
-  if (typeof Stats === 'function' && obj instanceof Stats) {
-    return true
-  }
+    referencer.visit(tree);
 
-  // quack quack
-  return obj && typeof obj === 'object' &&
-    'ctime' in obj && toString.call(obj.ctime) === '[object Date]' &&
-    'mtime' in obj && toString.call(obj.mtime) === '[object Date]' &&
-    'ino' in obj && typeof obj.ino === 'number' &&
-    'size' in obj && typeof obj.size === 'number'
+    assert(scopeManager.__currentScope === null, "currentScope should be null.");
+
+    return scopeManager;
 }
 
-/**
- * Generate a tag for a stat.
- *
- * @param {object} stat
- * @return {string}
- * @private
- */
+module.exports = {
 
-function stattag (stat) {
-  var mtime = stat.mtime.getTime().toString(16)
-  var size = stat.size.toString(16)
+    /** @name module:escope.version */
+    version,
 
-  return '"' + size + '-' + mtime + '"'
-}
+    /** @name module:escope.Reference */
+    Reference,
+
+    /** @name module:escope.Variable */
+    Variable,
+
+    /** @name module:escope.Scope */
+    Scope,
+
+    /** @name module:escope.ScopeManager */
+    ScopeManager,
+    analyze
+};
+
+
+/* vim: set sw=4 ts=4 et tw=80 : */
