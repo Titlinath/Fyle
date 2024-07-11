@@ -1,6 +1,9 @@
-export declare enum ERRORS {
-    ERR_CONFIG_FACTORY_TARGET_MISSING = "[HPM] Missing \"target\" option. Example: {target: \"http://www.example.org\"}",
-    ERR_CONTEXT_MATCHER_GENERIC = "[HPM] Invalid context. Expecting something like: \"/api\" or [\"/api\", \"/ajax\"]",
-    ERR_CONTEXT_MATCHER_INVALID_ARRAY = "[HPM] Invalid pathFilter. Expecting something like: [\"/api\", \"/ajax\"] or [\"/api/**\", \"!**.html\"]",
-    ERR_PATH_REWRITER_CONFIG = "[HPM] Invalid pathRewrite config. Expecting object with pathRewrite config or a rewrite function"
-}
+import type { TypeError } from "../compile/validate/dataType";
+import type { ApplicatorKeywordError } from "./applicator";
+import type { ValidationKeywordError } from "./validation";
+import type { FormatError } from "./format/format";
+import type { UnevaluatedPropertiesError } from "./unevaluated/unevaluatedProperties";
+import type { UnevaluatedItemsError } from "./unevaluated/unevaluatedItems";
+import type { DependentRequiredError } from "./validation/dependentRequired";
+import type { DiscriminatorError } from "./discriminator";
+export type DefinedError = TypeError | ApplicatorKeywordError | ValidationKeywordError | FormatError | UnevaluatedPropertiesError | UnevaluatedItemsError | DependentRequiredError | DiscriminatorError;

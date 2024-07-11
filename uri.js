@@ -1,4 +1,6 @@
-'use strict';
-
-/** @type {import('./uri')} */
-module.exports = URIError;
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const uri = require("uri-js");
+uri.code = 'require("ajv/dist/runtime/uri").default';
+exports.default = uri;
+//# sourceMappingURL=uri.js.map
