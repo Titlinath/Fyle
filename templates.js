@@ -1,8 +1,8 @@
 'use strict';
-const TEMPLATE_REGEX = /(?:\\(u(?:[a-f\d]{4}|\{[a-f\d]{1,6}\})|x[a-f\d]{2}|.))|(?:\{(~)?(\w+(?:\([^)]*\))?(?:\.\w+(?:\([^)]*\))?)*)(?:[ \t]|(?=\r?\n)))|(\})|((?:.|[\r\n\f])+?)/gi;
+const TEMPLATE_REGEX = /(?:\\(u[a-f\d]{4}|x[a-f\d]{2}|.))|(?:\{(~)?(\w+(?:\([^)]*\))?(?:\.\w+(?:\([^)]*\))?)*)(?:[ \t]|(?=\r?\n)))|(\})|((?:.|[\r\n\f])+?)/gi;
 const STYLE_REGEX = /(?:^|\.)(\w+)(?:\(([^)]*)\))?/g;
 const STRING_REGEX = /^(['"])((?:\\.|(?!\1)[^\\])*)\1$/;
-const ESCAPE_REGEX = /\\(u(?:[a-f\d]{4}|{[a-f\d]{1,6}})|x[a-f\d]{2}|.)|([^\\])/gi;
+const ESCAPE_REGEX = /\\(u[a-f\d]{4}|x[a-f\d]{2}|.)|([^\\])/gi;
 
 const ESCAPES = new Map([
 	['n', '\n'],
@@ -18,31 +18,23 @@ const ESCAPES = new Map([
 ]);
 
 function unescape(c) {
-	const u = c[0] === 'u';
-	const bracket = c[1] === '{';
-
-	if ((u && !bracket && c.length === 5) || (c[0] === 'x' && c.length === 3)) {
+	if ((c[0] === 'u' && c.length === 5) || (c[0] === 'x' && c.length === 3)) {
 		return String.fromCharCode(parseInt(c.slice(1), 16));
-	}
-
-	if (u && bracket) {
-		return String.fromCodePoint(parseInt(c.slice(2, -1), 16));
 	}
 
 	return ESCAPES.get(c) || c;
 }
 
-function parseArguments(name, arguments_) {
+function parseArguments(name, args) {
 	const results = [];
-	const chunks = arguments_.trim().split(/\s*,\s*/g);
+	const chunks = args.trim().split(/\s*,\s*/g);
 	let matches;
 
 	for (const chunk of chunks) {
-		const number = Number(chunk);
-		if (!Number.isNaN(number)) {
-			results.push(number);
+		if (!isNaN(chunk)) {
+			results.push(Number(chunk));
 		} else if ((matches = chunk.match(STRING_REGEX))) {
-			results.push(matches[2].replace(ESCAPE_REGEX, (m, escape, character) => escape ? unescape(escape) : character));
+			results.push(matches[2].replace(ESCAPE_REGEX, (m, escape, chr) => escape ? unescape(escape) : chr));
 		} else {
 			throw new Error(`Invalid Chalk template style argument: ${chunk} (in style '${name}')`);
 		}
@@ -81,34 +73,36 @@ function buildStyle(chalk, styles) {
 	}
 
 	let current = chalk;
-	for (const [styleName, styles] of Object.entries(enabled)) {
-		if (!Array.isArray(styles)) {
-			continue;
-		}
+	for (const styleName of Object.keys(enabled)) {
+		if (Array.isArray(enabled[styleName])) {
+			if (!(styleName in current)) {
+				throw new Error(`Unknown Chalk style: ${styleName}`);
+			}
 
-		if (!(styleName in current)) {
-			throw new Error(`Unknown Chalk style: ${styleName}`);
+			if (enabled[styleName].length > 0) {
+				current = current[styleName].apply(current, enabled[styleName]);
+			} else {
+				current = current[styleName];
+			}
 		}
-
-		current = styles.length > 0 ? current[styleName](...styles) : current[styleName];
 	}
 
 	return current;
 }
 
-module.exports = (chalk, temporary) => {
+module.exports = (chalk, tmp) => {
 	const styles = [];
 	const chunks = [];
 	let chunk = [];
 
 	// eslint-disable-next-line max-params
-	temporary.replace(TEMPLATE_REGEX, (m, escapeCharacter, inverse, style, close, character) => {
-		if (escapeCharacter) {
-			chunk.push(unescape(escapeCharacter));
+	tmp.replace(TEMPLATE_REGEX, (m, escapeChar, inverse, style, close, chr) => {
+		if (escapeChar) {
+			chunk.push(unescape(escapeChar));
 		} else if (style) {
-			const string = chunk.join('');
+			const str = chunk.join('');
 			chunk = [];
-			chunks.push(styles.length === 0 ? string : buildStyle(chalk, styles)(string));
+			chunks.push(styles.length === 0 ? str : buildStyle(chalk, styles)(str));
 			styles.push({inverse, styles: parseStyle(style)});
 		} else if (close) {
 			if (styles.length === 0) {
@@ -119,15 +113,15 @@ module.exports = (chalk, temporary) => {
 			chunk = [];
 			styles.pop();
 		} else {
-			chunk.push(character);
+			chunk.push(chr);
 		}
 	});
 
 	chunks.push(chunk.join(''));
 
 	if (styles.length > 0) {
-		const errMessage = `Chalk template literal is missing ${styles.length} closing bracket${styles.length === 1 ? '' : 's'} (\`}\`)`;
-		throw new Error(errMessage);
+		const errMsg = `Chalk template literal is missing ${styles.length} closing bracket${styles.length === 1 ? '' : 's'} (\`}\`)`;
+		throw new Error(errMsg);
 	}
 
 	return chunks.join('');
