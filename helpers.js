@@ -1,136 +1,61 @@
-import { hasChildren } from "domhandler";
-/**
- * Given an array of nodes, remove any member that is contained by another
- * member.
- *
- * @category Helpers
- * @param nodes Nodes to filter.
- * @returns Remaining nodes that aren't contained by other nodes.
- */
-export function removeSubsets(nodes) {
-    let idx = nodes.length;
-    /*
-     * Check if each node (or one of its ancestors) is already contained in the
-     * array.
-     */
-    while (--idx >= 0) {
-        const node = nodes[idx];
-        /*
-         * Remove the node if it is not unique.
-         * We are going through the array from the end, so we only
-         * have to check nodes that preceed the node under consideration in the array.
-         */
-        if (idx > 0 && nodes.lastIndexOf(node, idx - 1) >= 0) {
-            nodes.splice(idx, 1);
-            continue;
-        }
-        for (let ancestor = node.parent; ancestor; ancestor = ancestor.parent) {
-            if (nodes.includes(ancestor)) {
-                nodes.splice(idx, 1);
-                break;
-            }
-        }
-    }
-    return nodes;
+'use strict';
+// eslint-disable-next-line es/no-object-hasown -- safe
+const has = Object.hasOwn || Function.call.bind({}.hasOwnProperty);
+
+function semver(input) {
+  if (input instanceof semver) return input;
+  // eslint-disable-next-line new-cap -- ok
+  if (!(this instanceof semver)) return new semver(input);
+  const match = /(\d+)(?:\.(\d+))?(?:\.(\d+))?/.exec(input);
+  if (!match) throw new TypeError(`Invalid version: ${ input }`);
+  const [, $major, $minor, $patch] = match;
+  this.major = +$major;
+  this.minor = $minor ? +$minor : 0;
+  this.patch = $patch ? +$patch : 0;
 }
-/**
- * @category Helpers
- * @see {@link http://dom.spec.whatwg.org/#dom-node-comparedocumentposition}
- */
-export var DocumentPosition;
-(function (DocumentPosition) {
-    DocumentPosition[DocumentPosition["DISCONNECTED"] = 1] = "DISCONNECTED";
-    DocumentPosition[DocumentPosition["PRECEDING"] = 2] = "PRECEDING";
-    DocumentPosition[DocumentPosition["FOLLOWING"] = 4] = "FOLLOWING";
-    DocumentPosition[DocumentPosition["CONTAINS"] = 8] = "CONTAINS";
-    DocumentPosition[DocumentPosition["CONTAINED_BY"] = 16] = "CONTAINED_BY";
-})(DocumentPosition || (DocumentPosition = {}));
-/**
- * Compare the position of one node against another node in any other document,
- * returning a bitmask with the values from {@link DocumentPosition}.
- *
- * Document order:
- * > There is an ordering, document order, defined on all the nodes in the
- * > document corresponding to the order in which the first character of the
- * > XML representation of each node occurs in the XML representation of the
- * > document after expansion of general entities. Thus, the document element
- * > node will be the first node. Element nodes occur before their children.
- * > Thus, document order orders element nodes in order of the occurrence of
- * > their start-tag in the XML (after expansion of entities). The attribute
- * > nodes of an element occur after the element and before its children. The
- * > relative order of attribute nodes is implementation-dependent.
- *
- * Source:
- * http://www.w3.org/TR/DOM-Level-3-Core/glossary.html#dt-document-order
- *
- * @category Helpers
- * @param nodeA The first node to use in the comparison
- * @param nodeB The second node to use in the comparison
- * @returns A bitmask describing the input nodes' relative position.
- *
- * See http://dom.spec.whatwg.org/#dom-node-comparedocumentposition for
- * a description of these values.
- */
-export function compareDocumentPosition(nodeA, nodeB) {
-    const aParents = [];
-    const bParents = [];
-    if (nodeA === nodeB) {
-        return 0;
-    }
-    let current = hasChildren(nodeA) ? nodeA : nodeA.parent;
-    while (current) {
-        aParents.unshift(current);
-        current = current.parent;
-    }
-    current = hasChildren(nodeB) ? nodeB : nodeB.parent;
-    while (current) {
-        bParents.unshift(current);
-        current = current.parent;
-    }
-    const maxIdx = Math.min(aParents.length, bParents.length);
-    let idx = 0;
-    while (idx < maxIdx && aParents[idx] === bParents[idx]) {
-        idx++;
-    }
-    if (idx === 0) {
-        return DocumentPosition.DISCONNECTED;
-    }
-    const sharedParent = aParents[idx - 1];
-    const siblings = sharedParent.children;
-    const aSibling = aParents[idx];
-    const bSibling = bParents[idx];
-    if (siblings.indexOf(aSibling) > siblings.indexOf(bSibling)) {
-        if (sharedParent === nodeB) {
-            return DocumentPosition.FOLLOWING | DocumentPosition.CONTAINED_BY;
-        }
-        return DocumentPosition.FOLLOWING;
-    }
-    if (sharedParent === nodeA) {
-        return DocumentPosition.PRECEDING | DocumentPosition.CONTAINS;
-    }
-    return DocumentPosition.PRECEDING;
+
+semver.prototype.toString = function () {
+  return `${ this.major }.${ this.minor }.${ this.patch }`;
+};
+
+function compare($a, operator, $b) {
+  const a = semver($a);
+  const b = semver($b);
+  for (const component of ['major', 'minor', 'patch']) {
+    if (a[component] < b[component]) return operator === '<' || operator === '<=' || operator === '!=';
+    if (a[component] > b[component]) return operator === '>' || operator === '>=' || operator === '!=';
+  } return operator === '==' || operator === '<=' || operator === '>=';
 }
-/**
- * Sort an array of nodes based on their relative position in the document,
- * removing any duplicate nodes. If the array contains nodes that do not belong
- * to the same document, sort order is unspecified.
- *
- * @category Helpers
- * @param nodes Array of DOM nodes.
- * @returns Collection of unique nodes, sorted in document order.
- */
-export function uniqueSort(nodes) {
-    nodes = nodes.filter((node, i, arr) => !arr.includes(node, i + 1));
-    nodes.sort((a, b) => {
-        const relative = compareDocumentPosition(a, b);
-        if (relative & DocumentPosition.PRECEDING) {
-            return -1;
-        }
-        else if (relative & DocumentPosition.FOLLOWING) {
-            return 1;
-        }
-        return 0;
-    });
-    return nodes;
+
+function filterOutStabilizedProposals(modules) {
+  const modulesSet = new Set(modules);
+
+  for (const $module of modulesSet) {
+    if ($module.startsWith('esnext.') && modulesSet.has($module.replace(/^esnext\./, 'es.'))) {
+      modulesSet.delete($module);
+    }
+  }
+
+  return [...modulesSet];
 }
-//# sourceMappingURL=helpers.js.map
+
+function intersection(list, order) {
+  const set = list instanceof Set ? list : new Set(list);
+  return order.filter(name => set.has(name));
+}
+
+function sortObjectByKey(object, fn) {
+  return Object.keys(object).sort(fn).reduce((memo, key) => {
+    memo[key] = object[key];
+    return memo;
+  }, {});
+}
+
+module.exports = {
+  compare,
+  filterOutStabilizedProposals,
+  has,
+  intersection,
+  semver,
+  sortObjectByKey,
+};

@@ -1,99 +1,107 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.isDirectorySync = exports.isDirectory = exports.removeUndefinedValuesFromObject = exports.getPropertyByPath = exports.emplace = void 0;
-const fs_1 = __importStar(require("fs"));
-/**
- * @internal
- */
-function emplace(map, key, fn) {
-    const cached = map.get(key);
-    if (cached !== undefined) {
-        return cached;
-    }
-    const result = fn();
-    map.set(key, result);
-    return result;
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+// NOTE: These type checking functions intentionally don't use `instanceof`
+// because it is fragile and can be easily faked with `Object.create()`.
+
+function isArray(arg) {
+  if (Array.isArray) {
+    return Array.isArray(arg);
+  }
+  return objectToString(arg) === '[object Array]';
 }
-exports.emplace = emplace;
-// Resolves property names or property paths defined with period-delimited
-// strings or arrays of strings. Property names that are found on the source
-// object are used directly (even if they include a period).
-// Nested property names that include periods, within a path, are only
-// understood in array paths.
-/**
- * @internal
- */
-function getPropertyByPath(source, path) {
-    if (typeof path === 'string' &&
-        Object.prototype.hasOwnProperty.call(source, path)) {
-        return source[path];
-    }
-    const parsedPath = typeof path === 'string' ? path.split('.') : path;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return parsedPath.reduce((previous, key) => {
-        if (previous === undefined) {
-            return previous;
-        }
-        return previous[key];
-    }, source);
+exports.isArray = isArray;
+
+function isBoolean(arg) {
+  return typeof arg === 'boolean';
 }
-exports.getPropertyByPath = getPropertyByPath;
-/** @internal */
-function removeUndefinedValuesFromObject(options) {
-    return Object.fromEntries(Object.entries(options).filter(([, value]) => value !== undefined));
+exports.isBoolean = isBoolean;
+
+function isNull(arg) {
+  return arg === null;
 }
-exports.removeUndefinedValuesFromObject = removeUndefinedValuesFromObject;
-/** @internal */
-/* istanbul ignore next -- @preserve */
-async function isDirectory(path) {
-    try {
-        const stat = await fs_1.promises.stat(path);
-        return stat.isDirectory();
-    }
-    catch (e) {
-        if (e.code === 'ENOENT') {
-            return false;
-        }
-        throw e;
-    }
+exports.isNull = isNull;
+
+function isNullOrUndefined(arg) {
+  return arg == null;
 }
-exports.isDirectory = isDirectory;
-/** @internal */
-/* istanbul ignore next -- @preserve */
-function isDirectorySync(path) {
-    try {
-        const stat = fs_1.default.statSync(path);
-        return stat.isDirectory();
-    }
-    catch (e) {
-        if (e.code === 'ENOENT') {
-            return false;
-        }
-        throw e;
-    }
+exports.isNullOrUndefined = isNullOrUndefined;
+
+function isNumber(arg) {
+  return typeof arg === 'number';
 }
-exports.isDirectorySync = isDirectorySync;
-//# sourceMappingURL=util.js.map
+exports.isNumber = isNumber;
+
+function isString(arg) {
+  return typeof arg === 'string';
+}
+exports.isString = isString;
+
+function isSymbol(arg) {
+  return typeof arg === 'symbol';
+}
+exports.isSymbol = isSymbol;
+
+function isUndefined(arg) {
+  return arg === void 0;
+}
+exports.isUndefined = isUndefined;
+
+function isRegExp(re) {
+  return objectToString(re) === '[object RegExp]';
+}
+exports.isRegExp = isRegExp;
+
+function isObject(arg) {
+  return typeof arg === 'object' && arg !== null;
+}
+exports.isObject = isObject;
+
+function isDate(d) {
+  return objectToString(d) === '[object Date]';
+}
+exports.isDate = isDate;
+
+function isError(e) {
+  return (objectToString(e) === '[object Error]' || e instanceof Error);
+}
+exports.isError = isError;
+
+function isFunction(arg) {
+  return typeof arg === 'function';
+}
+exports.isFunction = isFunction;
+
+function isPrimitive(arg) {
+  return arg === null ||
+         typeof arg === 'boolean' ||
+         typeof arg === 'number' ||
+         typeof arg === 'string' ||
+         typeof arg === 'symbol' ||  // ES6 symbol
+         typeof arg === 'undefined';
+}
+exports.isPrimitive = isPrimitive;
+
+exports.isBuffer = require('buffer').Buffer.isBuffer;
+
+function objectToString(o) {
+  return Object.prototype.toString.call(o);
+}
