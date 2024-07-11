@@ -1,81 +1,22 @@
-dom-serialize
-=============
-### Serializes any DOM node into a String
+# Dependency Injection for Node.js
 
-[![Sauce Test Status](https://saucelabs.com/browser-matrix/dom-serialize.svg)](https://saucelabs.com/u/dom-serialize)
+Heavily influenced by [AngularJS] and its implementation of dependency injection.
+Inspired by [Guice] and [Pico Container].
 
-[![Build Status](https://travis-ci.org/webmodules/dom-serialize.svg?branch=master)](https://travis-ci.org/webmodules/dom-serialize)
+[AngularJS]: http://angularjs.org/
+[Pico Container]: http://picocontainer.codehaus.org/
+[Guice]: http://code.google.com/p/google-guice/
 
-It's like `outerHTML`, but it works with:
-
- * DOM elements
- * Text nodes
- * Attributes
- * Comment nodes
- * Documents
- * DocumentFragments
- * Doctypes
- * NodeLists / Arrays
-
-For custom serialization logic, a "serialize" event is dispatched on
-every `Node` which event listeners can override the default behavior on by
-setting the `event.detail.serialize` property to a String or other Node.
-
-The "serialize" event bubbles, so it could be a good idea to utilize
-event delegation on a known root node that will be serialized.
-Check the `event.serializeTarget` property to check which `Node` is
-currently being serialized.
-
-
-Installation
-------------
-
-``` bash
-$ npm install dom-serialize
-```
-
-
-Example
--------
-
-``` js
-var serialize = require('dom-serialize');
-var node;
-
-// works with Text nodes
-node = document.createTextNode('foo & <bar>');
-console.log(serialize(node));
-
-
-// works with DOM elements
-node = document.createElement('body');
-node.appendChild(document.createElement('strong'));
-node.firstChild.appendChild(document.createTextNode('hello'));
-console.log(serialize(node));
-
-
-// custom "serialize" event
-node.firstChild.addEventListener('serialize', function (event) {
-  event.detail.serialize = 'pwn';
-}, false);
-console.log(serialize(node));
-
-
-// you can also just pass a function in for a one-time serializer
-console.log(serialize(node, function (event) {
-  if (event.serializeTarget === node.firstChild) {
-    // for the first child, output an ellipsis to summarize "content"
-    event.detail.serialze = '…';
-  } else if (event.serializeTarget !== node) {
-    // any other child
-    event.preventDefault();
-  }
-}));
-```
-
-```
-foo &amp; &lt;bar&gt;
-<body><strong>hello</strong></body>
-<body>pwn</body>
-<body>…</body>
-```
+<!--
+Differences compare to Angular:
+- service -> type
+- no config/runtime phase
+- no providers (configuration happens by registering config)
+- no $provide
+- no global module register
+- no array annotations (but annotate helper)
+- no decorators
+- no child injectors (yet)
+- comment annotation (TBD)
+- node module injection (TBD)
+-->
