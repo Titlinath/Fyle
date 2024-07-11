@@ -1,14 +1,3 @@
-/**
-List of binary file extensions.
-
-@example
-```
-import binaryExtensions = require('binary-extensions');
-
-console.log(binaryExtensions);
-//=> ['3ds', '3g2', …]
-```
-*/
-declare const binaryExtensions: readonly string[];
-
-export = binaryExtensions;
+export function byteLength(b64: string): number;
+export function toByteArray(b64: string): Uint8Array;
+export function fromByteArray(uint8: Uint8Array): string;
