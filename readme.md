@@ -1,48 +1,70 @@
-# import-fresh
+# has-flag [![Build Status](https://travis-ci.org/sindresorhus/has-flag.svg?branch=master)](https://travis-ci.org/sindresorhus/has-flag)
 
-> Import a module while bypassing the [cache](https://nodejs.org/api/modules.html#modules_caching)
+> Check if [`argv`](https://nodejs.org/docs/latest/api/process.html#process_process_argv) has a specific flag
 
-Useful for testing purposes when you need to freshly import a module.
+Correctly stops looking after an `--` argument terminator.
+
 
 ## Install
 
 ```
-$ npm install import-fresh
+$ npm install has-flag
 ```
+
 
 ## Usage
 
 ```js
 // foo.js
-let i = 0;
-module.exports = () => ++i;
+const hasFlag = require('has-flag');
+
+hasFlag('unicorn');
+//=> true
+
+hasFlag('--unicorn');
+//=> true
+
+hasFlag('f');
+//=> true
+
+hasFlag('-f');
+//=> true
+
+hasFlag('foo=bar');
+//=> true
+
+hasFlag('foo');
+//=> false
+
+hasFlag('rainbow');
+//=> false
 ```
 
-```js
-const importFresh = require('import-fresh');
-
-require('./foo')();
-//=> 1
-
-require('./foo')();
-//=> 2
-
-importFresh('./foo')();
-//=> 1
-
-importFresh('./foo')();
-//=> 1
+```
+$ node foo.js -f --unicorn --foo=bar -- --rainbow
 ```
 
-## import-fresh for enterprise
 
-Available as part of the Tidelift Subscription.
+## API
 
-The maintainers of import-fresh and thousands of other packages are working with Tidelift to deliver commercial support and maintenance for the open source dependencies you use to build your applications. Save time, reduce risk, and improve code health, while paying the maintainers of the exact dependencies you use. [Learn more.](https://tidelift.com/subscription/pkg/npm-import-fresh?utm_source=npm-import-fresh&utm_medium=referral&utm_campaign=enterprise&utm_term=repo)
+### hasFlag(flag, [argv])
 
-## Related
+Returns a boolean for whether the flag exists.
 
-- [clear-module](https://github.com/sindresorhus/clear-module) - Clear a module from the import cache
-- [import-from](https://github.com/sindresorhus/import-from) - Import a module from a given path
-- [import-cwd](https://github.com/sindresorhus/import-cwd) - Import a module from the current working directory
-- [import-lazy](https://github.com/sindresorhus/import-lazy) - Import modules lazily
+#### flag
+
+Type: `string`
+
+CLI flag to look for. The `--` prefix is optional.
+
+#### argv
+
+Type: `string[]`<br>
+Default: `process.argv`
+
+CLI arguments.
+
+
+## License
+
+MIT © [Sindre Sorhus](https://sindresorhus.com)
