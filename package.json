@@ -1,53 +1,41 @@
 {
-	"name": "supports-color",
-	"version": "7.2.0",
-	"description": "Detect whether a terminal supports color",
-	"license": "MIT",
-	"repository": "chalk/supports-color",
-	"author": {
-		"name": "Sindre Sorhus",
-		"email": "sindresorhus@gmail.com",
-		"url": "sindresorhus.com"
-	},
-	"engines": {
-		"node": ">=8"
-	},
-	"scripts": {
-		"test": "xo && ava"
-	},
-	"files": [
-		"index.js",
-		"browser.js"
-	],
-	"keywords": [
-		"color",
-		"colour",
-		"colors",
-		"terminal",
-		"console",
-		"cli",
-		"ansi",
-		"styles",
-		"tty",
-		"rgb",
-		"256",
-		"shell",
-		"xterm",
-		"command-line",
-		"support",
-		"supports",
-		"capability",
-		"detect",
-		"truecolor",
-		"16m"
-	],
-	"dependencies": {
-		"has-flag": "^4.0.0"
-	},
-	"devDependencies": {
-		"ava": "^1.4.1",
-		"import-fresh": "^3.0.0",
-		"xo": "^0.24.0"
-	},
-	"browser": "browser.js"
+  "name": "cors",
+  "description": "Node.js CORS middleware",
+  "version": "2.8.5",
+  "author": "Troy Goode <troygoode@gmail.com> (https://github.com/troygoode/)",
+  "license": "MIT",
+  "keywords": [
+    "cors",
+    "express",
+    "connect",
+    "middleware"
+  ],
+  "repository": "expressjs/cors",
+  "main": "./lib/index.js",
+  "dependencies": {
+    "object-assign": "^4",
+    "vary": "^1"
+  },
+  "devDependencies": {
+    "after": "0.8.2",
+    "eslint": "2.13.1",
+    "express": "4.16.3",
+    "mocha": "5.2.0",
+    "nyc": "13.1.0",
+    "supertest": "3.3.0"
+  },
+  "files": [
+    "lib/index.js",
+    "CONTRIBUTING.md",
+    "HISTORY.md",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">= 0.10"
+  },
+  "scripts": {
+    "test": "npm run lint && nyc --reporter=html --reporter=text mocha --require test/support/env",
+    "lint": "eslint lib test"
+  }
 }

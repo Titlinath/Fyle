@@ -1,38 +1,33 @@
-# Developer's Certificate of Origin 1.1
+# contributing to `cors`
 
-By making a contribution to this project, I certify that:
+CORS is a node.js package for providing a [connect](http://www.senchalabs.org/connect/)/[express](http://expressjs.com/) middleware that can be used to enable [CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing) with various options. Learn more about the project in [the README](README.md).
 
-* (a) The contribution was created in whole or in part by me and I
-  have the right to submit it under the open source license
-  indicated in the file; or
+## The CORS Spec
 
-* (b) The contribution is based upon previous work that, to the best
-  of my knowledge, is covered under an appropriate open source
-  license and I have the right under that license to submit that
-  work with modifications, whether created in whole or in part
-  by me, under the same open source license (unless I am
-  permitted to submit under a different license), as indicated
-  in the file; or
+[http://www.w3.org/TR/cors/](http://www.w3.org/TR/cors/)
 
-* (c) The contribution was provided directly to me by some other
-  person who certified (a), (b) or (c) and I have not modified
-  it.
+## Pull Requests Welcome
 
-* (d) I understand and agree that this project and the contribution
-  are public and that a record of the contribution (including all
-  personal information I submit with it, including my sign-off) is
-  maintained indefinitely and may be redistributed consistent with
-  this project or the open source license(s) involved.
+* Include `'use strict';` in every javascript file.
+* 2 space indentation.
+* Please run the testing steps below before submitting.
 
-## Moderation Policy
+## Testing
 
-The [Node.js Moderation Policy] applies to this WG.
+```bash
+$ npm install
+$ npm test
+```
 
-## Code of Conduct
+## Interactive Testing Harness
 
-The [Node.js Code of Conduct][] applies to this WG.
+[http://node-cors-client.herokuapp.com](http://node-cors-client.herokuapp.com)
 
-[Node.js Code of Conduct]:
-https://github.com/nodejs/node/blob/master/CODE_OF_CONDUCT.md
-[Node.js Moderation Policy]:
-https://github.com/nodejs/TSC/blob/master/Moderation-Policy.md
+Related git repositories:
+
+* [https://github.com/TroyGoode/node-cors-server](https://github.com/TroyGoode/node-cors-server)
+* [https://github.com/TroyGoode/node-cors-client](https://github.com/TroyGoode/node-cors-client)
+
+## License
+
+[MIT License](http://www.opensource.org/licenses/mit-license.php)
