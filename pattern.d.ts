@@ -1,47 +1,76 @@
-import { MicromatchOptions, Pattern, PatternRe } from '../types';
-type PatternTypeOptions = {
-    braceExpansion?: boolean;
-    caseSensitiveMatch?: boolean;
-    extglob?: boolean;
-};
-export declare function isStaticPattern(pattern: Pattern, options?: PatternTypeOptions): boolean;
-export declare function isDynamicPattern(pattern: Pattern, options?: PatternTypeOptions): boolean;
-export declare function convertToPositivePattern(pattern: Pattern): Pattern;
-export declare function convertToNegativePattern(pattern: Pattern): Pattern;
-export declare function isNegativePattern(pattern: Pattern): boolean;
-export declare function isPositivePattern(pattern: Pattern): boolean;
-export declare function getNegativePatterns(patterns: Pattern[]): Pattern[];
-export declare function getPositivePatterns(patterns: Pattern[]): Pattern[];
+import { GLOBSTAR } from 'minimatch';
+export type MMPattern = string | RegExp | typeof GLOBSTAR;
+export type PatternList = [p: MMPattern, ...rest: MMPattern[]];
+export type UNCPatternList = [
+    p0: '',
+    p1: '',
+    p2: string,
+    p3: string,
+    ...rest: MMPattern[]
+];
+export type DrivePatternList = [p0: string, ...rest: MMPattern[]];
+export type AbsolutePatternList = [p0: '', ...rest: MMPattern[]];
+export type GlobList = [p: string, ...rest: string[]];
 /**
- * Returns patterns that can be applied inside the current directory.
- *
- * @example
- * // ['./*', '*', 'a/*']
- * getPatternsInsideCurrentDirectory(['./*', '*', 'a/*', '../*', './../*'])
+ * An immutable-ish view on an array of glob parts and their parsed
+ * results
  */
-export declare function getPatternsInsideCurrentDirectory(patterns: Pattern[]): Pattern[];
-/**
- * Returns patterns to be expanded relative to (outside) the current directory.
- *
- * @example
- * // ['../*', './../*']
- * getPatternsInsideCurrentDirectory(['./*', '*', 'a/*', '../*', './../*'])
- */
-export declare function getPatternsOutsideCurrentDirectory(patterns: Pattern[]): Pattern[];
-export declare function isPatternRelatedToParentDirectory(pattern: Pattern): boolean;
-export declare function getBaseDirectory(pattern: Pattern): string;
-export declare function hasGlobStar(pattern: Pattern): boolean;
-export declare function endsWithSlashGlobStar(pattern: Pattern): boolean;
-export declare function isAffectDepthOfReadingPattern(pattern: Pattern): boolean;
-export declare function expandPatternsWithBraceExpansion(patterns: Pattern[]): Pattern[];
-export declare function expandBraceExpansion(pattern: Pattern): Pattern[];
-export declare function getPatternParts(pattern: Pattern, options: MicromatchOptions): Pattern[];
-export declare function makeRe(pattern: Pattern, options: MicromatchOptions): PatternRe;
-export declare function convertPatternsToRe(patterns: Pattern[], options: MicromatchOptions): PatternRe[];
-export declare function matchAny(entry: string, patternsRe: PatternRe[]): boolean;
-/**
- * This package only works with forward slashes as a path separator.
- * Because of this, we cannot use the standard `path.normalize` method, because on Windows platform it will use of backslashes.
- */
-export declare function removeDuplicateSlashes(pattern: string): string;
-export {};
+export declare class Pattern {
+    #private;
+    readonly length: number;
+    constructor(patternList: MMPattern[], globList: string[], index: number, platform: NodeJS.Platform);
+    /**
+     * The first entry in the parsed list of patterns
+     */
+    pattern(): MMPattern;
+    /**
+     * true of if pattern() returns a string
+     */
+    isString(): boolean;
+    /**
+     * true of if pattern() returns GLOBSTAR
+     */
+    isGlobstar(): boolean;
+    /**
+     * true if pattern() returns a regexp
+     */
+    isRegExp(): boolean;
+    /**
+     * The /-joined set of glob parts that make up this pattern
+     */
+    globString(): string;
+    /**
+     * true if there are more pattern parts after this one
+     */
+    hasMore(): boolean;
+    /**
+     * The rest of the pattern after this part, or null if this is the end
+     */
+    rest(): Pattern | null;
+    /**
+     * true if the pattern represents a //unc/path/ on windows
+     */
+    isUNC(): boolean;
+    /**
+     * True if the pattern starts with a drive letter on Windows
+     */
+    isDrive(): boolean;
+    /**
+     * True if the pattern is rooted on an absolute path
+     */
+    isAbsolute(): boolean;
+    /**
+     * consume the root of the pattern, and return it
+     */
+    root(): string;
+    /**
+     * Check to see if the current globstar pattern is allowed to follow
+     * a symbolic link.
+     */
+    checkFollowGlobstar(): boolean;
+    /**
+     * Mark that the current globstar pattern is following a symbolic link
+     */
+    markFollowGlobstar(): boolean;
+}
+//# sourceMappingURL=pattern.d.ts.map
