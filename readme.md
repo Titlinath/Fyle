@@ -1,211 +1,122 @@
-# escalade [![CI](https://github.com/lukeed/escalade/workflows/CI/badge.svg)](https://github.com/lukeed/escalade/actions) [![licenses](https://licenses.dev/b/npm/escalade)](https://licenses.dev/npm/escalade) [![codecov](https://badgen.now.sh/codecov/c/github/lukeed/escalade)](https://codecov.io/gh/lukeed/escalade)
+# entities [![NPM version](https://img.shields.io/npm/v/entities.svg)](https://npmjs.org/package/entities) [![Downloads](https://img.shields.io/npm/dm/entities.svg)](https://npmjs.org/package/entities) [![Node.js CI](https://github.com/fb55/entities/actions/workflows/nodejs-test.yml/badge.svg)](https://github.com/fb55/entities/actions/workflows/nodejs-test.yml)
 
-> A tiny (183B to 210B) and [fast](#benchmarks) utility to ascend parent directories
+Encode & decode HTML & XML entities with ease & speed.
 
-With [escalade](https://en.wikipedia.org/wiki/Escalade), you can scale parent directories until you've found what you're looking for.<br>Given an input file or directory, `escalade` will continue executing your callback function until either:
+## Features
 
-1) the callback returns a truthy value
-2) `escalade` has reached the system root directory (eg, `/`)
+-   😇 Tried and true: `entities` is used by many popular libraries; eg.
+    [`htmlparser2`](https://github.com/fb55/htmlparser2), the official
+    [AWS SDK](https://github.com/aws/aws-sdk-js-v3) and
+    [`commonmark`](https://github.com/commonmark/commonmark.js) use it to
+    process HTML entities.
+-   ⚡️ Fast: `entities` is the fastest library for decoding HTML entities (as
+    of April 2022); see [performance](#performance).
+-   🎛 Configurable: Get an output tailored for your needs. You are fine with
+    UTF8? That'll save you some bytes. Prefer to only have ASCII characters? We
+    can do that as well!
 
-> **Important:**<br>Please note that `escalade` only deals with direct ancestry – it will not dive into parents' sibling directories.
+## How to…
+
+### …install `entities`
+
+    npm install entities
+
+### …use `entities`
+
+```javascript
+const entities = require("entities");
+
+// Encoding
+entities.escapeUTF8("&#38; ü"); // "&amp;#38; ü"
+entities.encodeXML("&#38; ü"); // "&amp;#38; &#xfc;"
+entities.encodeHTML("&#38; ü"); // "&amp;&num;38&semi; &uuml;"
+
+// Decoding
+entities.decodeXML("asdf &amp; &#xFF; &#xFC; &apos;"); // "asdf & ÿ ü '"
+entities.decodeHTML("asdf &amp; &yuml; &uuml; &apos;"); // "asdf & ÿ ü '"
+```
+
+## Performance
+
+This is how `entities` compares to other libraries on a very basic benchmark
+(see `scripts/benchmark.ts`, for 10,000,000 iterations; **lower is better**):
+
+| Library        | Version | `decode` perf | `encode` perf | `escape` perf |
+| -------------- | ------- | ------------- | ------------- | ------------- |
+| entities       | `3.0.1` | 1.418s        | 6.786s        | 2.196s        |
+| html-entities  | `2.3.2` | 2.530s        | 6.829s        | 2.415s        |
+| he             | `1.2.0` | 5.800s        | 24.237s       | 3.624s        |
+| parse-entities | `3.0.0` | 9.660s        | N/A           | N/A           |
 
 ---
 
-**Notice:** As of v3.1.0, `escalade` now includes [Deno support](http://deno.land/x/escalade)! Please see [Deno Usage](#deno) below.
+## FAQ
+
+> What methods should I actually use to encode my documents?
+
+If your target supports UTF-8, the `escapeUTF8` method is going to be your best
+choice. Otherwise, use either `encodeHTML` or `encodeXML` based on whether
+you're dealing with an HTML or an XML document.
+
+You can have a look at the options for the `encode` and `decode` methods to see
+everything you can configure.
+
+> When should I use strict decoding?
+
+When strict decoding, entities not terminated with a semicolon will be ignored.
+This is helpful for decoding entities in legacy environments.
+
+> Why should I use `entities` instead of alternative modules?
+
+As of April 2022, `entities` is a bit faster than other modules. Still, this is
+not a very differentiated space and other modules can catch up.
+
+**More importantly**, you might already have `entities` in your dependency graph
+(as a dependency of eg. `cheerio`, or `htmlparser2`), and including it directly
+might not even increase your bundle size. The same is true for other entity
+libraries, so have a look through your `node_modules` directory!
+
+> Does `entities` support tree shaking?
+
+Yes! `entities` ships as both a CommonJS and a ES module. Note that for best
+results, you should not use the `encode` and `decode` functions, as they wrap
+around a number of other functions, all of which will remain in the bundle.
+Instead, use the functions that you need directly.
 
 ---
 
-## Install
+## Acknowledgements
 
-```
-$ npm install --save escalade
-```
+This library wouldn't be possible without the work of these individuals. Thanks
+to
 
+-   [@mathiasbynens](https://github.com/mathiasbynens) for his explanations
+    about character encodings, and his library `he`, which was one of the
+    inspirations for `entities`
+-   [@inikulin](https://github.com/inikulin) for his work on optimized tries for
+    decoding HTML entities for the `parse5` project
+-   [@mdevils](https://github.com/mdevils) for taking on the challenge of
+    producing a quick entity library with his `html-entities` library.
+    `entities` would be quite a bit slower if there wasn't any competition.
+    Right now `entities` is on top, but we'll see how long that lasts!
 
-## Modes
+---
 
-There are two "versions" of `escalade` available:
+License: BSD-2-Clause
 
-#### "async"
-> **Node.js:** >= 8.x<br>
-> **Size (gzip):** 210 bytes<br>
-> **Availability:** [CommonJS](https://unpkg.com/escalade/dist/index.js), [ES Module](https://unpkg.com/escalade/dist/index.mjs)
+## Security contact information
 
-This is the primary/default mode. It makes use of `async`/`await` and [`util.promisify`](https://nodejs.org/api/util.html#util_util_promisify_original).
+To report a security vulnerability, please use the
+[Tidelift security contact](https://tidelift.com/security). Tidelift will
+coordinate the fix and disclosure.
 
-#### "sync"
-> **Node.js:** >= 6.x<br>
-> **Size (gzip):** 183 bytes<br>
-> **Availability:** [CommonJS](https://unpkg.com/escalade/sync/index.js), [ES Module](https://unpkg.com/escalade/sync/index.mjs)
+## `entities` for enterprise
 
-This is the opt-in mode, ideal for scenarios where `async` usage cannot be supported.
+Available as part of the Tidelift Subscription
 
-
-## Usage
-
-***Example Structure***
-
-```
-/Users/lukeed
-  └── oss
-    ├── license
-    └── escalade
-      ├── package.json
-      └── test
-        └── fixtures
-          ├── index.js
-          └── foobar
-            └── demo.js
-```
-
-***Example Usage***
-
-```js
-//~> demo.js
-import { join } from 'path';
-import escalade from 'escalade';
-
-const input = join(__dirname, 'demo.js');
-// or: const input = __dirname;
-
-const pkg = await escalade(input, (dir, names) => {
-  console.log('~> dir:', dir);
-  console.log('~> names:', names);
-  console.log('---');
-
-  if (names.includes('package.json')) {
-    // will be resolved into absolute
-    return 'package.json';
-  }
-});
-
-//~> dir: /Users/lukeed/oss/escalade/test/fixtures/foobar
-//~> names: ['demo.js']
-//---
-//~> dir: /Users/lukeed/oss/escalade/test/fixtures
-//~> names: ['index.js', 'foobar']
-//---
-//~> dir: /Users/lukeed/oss/escalade/test
-//~> names: ['fixtures']
-//---
-//~> dir: /Users/lukeed/oss/escalade
-//~> names: ['package.json', 'test']
-//---
-
-console.log(pkg);
-//=> /Users/lukeed/oss/escalade/package.json
-
-// Now search for "missing123.txt"
-// (Assume it doesn't exist anywhere!)
-const missing = await escalade(input, (dir, names) => {
-  console.log('~> dir:', dir);
-  return names.includes('missing123.txt') && 'missing123.txt';
-});
-
-//~> dir: /Users/lukeed/oss/escalade/test/fixtures/foobar
-//~> dir: /Users/lukeed/oss/escalade/test/fixtures
-//~> dir: /Users/lukeed/oss/escalade/test
-//~> dir: /Users/lukeed/oss/escalade
-//~> dir: /Users/lukeed/oss
-//~> dir: /Users/lukeed
-//~> dir: /Users
-//~> dir: /
-
-console.log(missing);
-//=> undefined
-```
-
-> **Note:** To run the above example with "sync" mode, import from `escalade/sync` and remove the `await` keyword.
-
-
-## API
-
-### escalade(input, callback)
-Returns: `string|void` or `Promise<string|void>`
-
-When your `callback` locates a file, `escalade` will resolve/return with an absolute path.<br>
-If your `callback` was never satisfied, then `escalade` will resolve/return with nothing (undefined).
-
-> **Important:**<br>The `sync` and `async` versions share the same API.<br>The **only** difference is that `sync` is not Promise-based.
-
-#### input
-Type: `string`
-
-The path from which to start ascending.
-
-This may be a file or a directory path.<br>However, when `input` is a file, `escalade` will begin with its parent directory.
-
-> **Important:** Unless given an absolute path, `input` will be resolved from `process.cwd()` location.
-
-#### callback
-Type: `Function`
-
-The callback to execute for each ancestry level. It always is given two arguments:
-
-1) `dir` - an absolute path of the current parent directory
-2) `names` - a list (`string[]`) of contents _relative to_ the `dir` parent
-
-> **Note:** The `names` list can contain names of files _and_ directories.
-
-When your callback returns a _falsey_ value, then `escalade` will continue with `dir`'s parent directory, re-invoking your callback with new argument values.
-
-When your callback returns a string, then `escalade` stops iteration immediately.<br>
-If the string is an absolute path, then it's left as is. Otherwise, the string is resolved into an absolute path _from_ the `dir` that housed the satisfying condition.
-
-> **Important:** Your `callback` can be a `Promise/AsyncFunction` when using the "async" version of `escalade`.
-
-## Benchmarks
-
-> Running on Node.js v10.13.0
-
-```
-# Load Time
-  find-up         3.891ms
-  escalade        0.485ms
-  escalade/sync   0.309ms
-
-# Levels: 6 (target = "foo.txt"):
-  find-up          x 24,856 ops/sec ±6.46% (55 runs sampled)
-  escalade         x 73,084 ops/sec ±4.23% (73 runs sampled)
-  find-up.sync     x  3,663 ops/sec ±1.12% (83 runs sampled)
-  escalade/sync    x  9,360 ops/sec ±0.62% (88 runs sampled)
-
-# Levels: 12 (target = "package.json"):
-  find-up          x 29,300 ops/sec ±10.68% (70 runs sampled)
-  escalade         x 73,685 ops/sec ± 5.66% (66 runs sampled)
-  find-up.sync     x  1,707 ops/sec ± 0.58% (91 runs sampled)
-  escalade/sync    x  4,667 ops/sec ± 0.68% (94 runs sampled)
-
-# Levels: 18 (target = "missing123.txt"):
-  find-up          x 21,818 ops/sec ±17.37% (14 runs sampled)
-  escalade         x 67,101 ops/sec ±21.60% (20 runs sampled)
-  find-up.sync     x  1,037 ops/sec ± 2.86% (88 runs sampled)
-  escalade/sync    x  1,248 ops/sec ± 0.50% (93 runs sampled)
-```
-
-## Deno
-
-As of v3.1.0, `escalade` is available on the Deno registry.
-
-Please note that the [API](#api) is identical and that there are still [two modes](#modes) from which to choose:
-
-```ts
-// Choose "async" mode
-import escalade from 'https://deno.land/escalade/async.ts';
-
-// Choose "sync" mode
-import escalade from 'https://deno.land/escalade/sync.ts';
-```
-
-> **Important:** The `allow-read` permission is required!
-
-
-## Related
-
-- [premove](https://github.com/lukeed/premove) - A tiny (247B) utility to remove items recursively
-- [totalist](https://github.com/lukeed/totalist) - A tiny (195B to 224B) utility to recursively list all (total) files in a directory
-- [mk-dirs](https://github.com/lukeed/mk-dirs) - A tiny (420B) utility to make a directory and its parents, recursively
-
-## License
-
-MIT © [Luke Edwards](https://lukeed.com)
+The maintainers of `entities` and thousands of other packages are working with
+Tidelift to deliver commercial support and maintenance for the open source
+dependencies you use to build your applications. Save time, reduce risk, and
+improve code health, while paying the maintainers of the exact dependencies you
+use.
+[Learn more.](https://tidelift.com/subscription/pkg/npm-entities?utm_source=npm-entities&utm_medium=referral&utm_campaign=enterprise&utm_term=repo)

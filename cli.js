@@ -1,42 +1,22 @@
 #!/usr/bin/env node
 
-const fs = require('fs')
-const path = require('path')
-const readline = require('readline')
+var errno = require('./')
+  , arg   = process.argv[2]
+  , data, code
 
-const flat = require('./index')
-
-const filepath = process.argv.slice(2)[0]
-if (filepath) {
-  // Read from file
-  const file = path.resolve(process.cwd(), filepath)
-  fs.accessSync(file, fs.constants.R_OK) // allow to throw if not readable
-  out(require(file))
-} else if (process.stdin.isTTY) {
-  usage(0)
-} else {
-  // Read from newline-delimited STDIN
-  const lines = []
-  readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    terminal: false
-  })
-    .on('line', line => lines.push(line))
-    .on('close', () => out(JSON.parse(lines.join('\n'))))
+if (arg === undefined) {
+  console.log(JSON.stringify(errno.code, null, 2))
+  process.exit(0)
 }
 
-function out (data) {
-  process.stdout.write(JSON.stringify(flat(data), null, 2))
-}
+if ((code = +arg) == arg)
+  data = errno.errno[code]
+else
+  data = errno.code[arg] || errno.code[arg.toUpperCase()]
 
-function usage (code) {
-  console.log(`
-Usage:
-
-flat foo.json
-cat foo.json | flat
-`)
-
-  process.exit(code || 0)
+if (data)
+  console.log(JSON.stringify(data, null, 2))
+else {
+  console.error('No such errno/code: "' + arg + '"')
+  process.exit(1)
 }
