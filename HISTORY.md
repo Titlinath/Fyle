@@ -1,82 +1,83 @@
-2.0.1 / 2021-01-03
+1.8.1 / 2017-09-12
 ==================
 
-  * Fix returning values from `Object.prototype`
+  * perf: replace regular expression with substring
 
-2.0.0 / 2020-04-19
+1.8.0 / 2017-02-18
 ==================
 
-  * Drop support for Node.js 0.6
-  * Fix messaging casing of `418 I'm a Teapot`
-  * Remove code 306
-  * Remove `status[code]` exports; use `status.message[code]`
-  * Remove `status[msg]` exports; use `status.code[msg]`
-  * Rename `425 Unordered Collection` to standard `425 Too Early`
-  * Rename `STATUS_CODES` export to `message`
-  * Return status message for `statuses(code)` when given code
+  * Use SHA1 instead of MD5 for ETag hashing
+    - Improves performance for larger entities
+    - Works with FIPS 140-2 OpenSSL configuration
 
-1.5.0 / 2018-03-27
+1.7.0 / 2015-06-08
 ==================
 
-  * Add `103 Early Hints`
+  * Always include entity length in ETags for hash length extensions
+  * Generate non-Stats ETags using MD5 only (no longer CRC32)
+  * Improve stat performance by removing hashing
+  * Remove base64 padding in ETags to shorten
+  * Use MD5 instead of MD4 in weak ETags over 1KB
 
-1.4.0 / 2017-10-20
+1.6.0 / 2015-05-10
 ==================
 
-  * Add `STATUS_CODES` export
+  * Improve support for JXcore
+  * Remove requirement of `atime` in the stats object
+  * Support "fake" stats objects in environments without `fs`
 
-1.3.1 / 2016-11-11
+1.5.1 / 2014-11-19
 ==================
 
-  * Fix return type in JSDoc
+  * deps: crc@3.2.1
+    - Minor fixes
 
-1.3.0 / 2016-05-17
+1.5.0 / 2014-10-14
 ==================
 
-  * Add `421 Misdirected Request`
-  * perf: enable strict mode
+  * Improve string performance
+  * Slightly improve speed for weak ETags over 1KB
 
-1.2.1 / 2015-02-01
+1.4.0 / 2014-09-21
 ==================
 
-  * Fix message for status 451
-    - `451 Unavailable For Legal Reasons`
+  * Support "fake" stats objects
+  * Support Node.js 0.6
 
-1.2.0 / 2014-09-28
+1.3.1 / 2014-09-14
 ==================
 
-  * Add `208 Already Repored`
-  * Add `226 IM Used`
-  * Add `306 (Unused)`
-  * Add `415 Unable For Legal Reasons`
-  * Add `508 Loop Detected`
+  * Use the (new and improved) `crc` for crc32
 
-1.1.1 / 2014-09-24
+1.3.0 / 2014-08-29
 ==================
 
-  * Add missing 308 to `codes.json`
+  * Default strings to strong ETags
+  * Improve speed for weak ETags over 1KB
 
-1.1.0 / 2014-09-21
+1.2.1 / 2014-08-29
 ==================
 
-  * Add `codes.json` for universal support
+  * Use the (much faster) `buffer-crc32` for crc32
 
-1.0.4 / 2014-08-20
+1.2.0 / 2014-08-24
 ==================
 
-  * Package cleanup
+  * Add support for file stat objects
 
-1.0.3 / 2014-06-08
+1.1.0 / 2014-08-24
 ==================
 
-  * Add 308 to `.redirect` category
+  * Add fast-path for empty entity
+  * Add weak ETag generation
+  * Shrink size of generated ETags
 
-1.0.2 / 2014-03-13
+1.0.1 / 2014-08-24
 ==================
 
-  * Add `.retry` category
+  * Fix behavior of string containing Unicode
 
-1.0.1 / 2014-03-12
+1.0.0 / 2014-05-18
 ==================
 
   * Initial release
