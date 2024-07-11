@@ -1,94 +1,201 @@
-import { AST } from './ast.js';
-type Platform = 'aix' | 'android' | 'darwin' | 'freebsd' | 'haiku' | 'linux' | 'openbsd' | 'sunos' | 'win32' | 'cygwin' | 'netbsd';
-export interface MinimatchOptions {
-    nobrace?: boolean;
-    nocomment?: boolean;
-    nonegate?: boolean;
-    debug?: boolean;
-    noglobstar?: boolean;
-    noext?: boolean;
-    nonull?: boolean;
-    windowsPathsNoEscape?: boolean;
-    allowWindowsEscape?: boolean;
-    partial?: boolean;
-    dot?: boolean;
-    nocase?: boolean;
-    nocaseMagicOnly?: boolean;
-    magicalBraces?: boolean;
-    matchBase?: boolean;
-    flipNegate?: boolean;
-    preserveMultipleSlashes?: boolean;
-    optimizationLevel?: number;
-    platform?: Platform;
-    windowsNoMagicRoot?: boolean;
+/**
+ * Return array of browsers by selection queries.
+ *
+ * ```js
+ * browserslist('IE >= 10, IE 8') //=> ['ie 11', 'ie 10', 'ie 8']
+ * ```
+ *
+ * @param queries Browser queries.
+ * @param opts Options.
+ * @returns Array with browser names in Can I Use.
+ */
+declare function browserslist(
+  queries?: string | readonly string[] | null,
+  opts?: browserslist.Options
+): string[]
+
+declare namespace browserslist {
+  interface Query {
+    compose: 'or' | 'and'
+    type: string
+    query: string
+    not?: true
+  }
+
+  interface Options {
+    /**
+     * Path to processed file. It will be used to find config files.
+     */
+    path?: string | false
+    /**
+     * Processing environment. It will be used to take right queries
+     * from config file.
+     */
+    env?: string
+    /**
+     * Custom browser usage statistics for "> 1% in my stats" query.
+     */
+    stats?: Stats | string
+    /**
+     * Path to config file with queries.
+     */
+    config?: string
+    /**
+     * Do not throw on unknown version in direct query.
+     */
+    ignoreUnknownVersions?: boolean
+    /**
+     * Throw an error if env is not found.
+     */
+    throwOnMissing?: boolean
+    /**
+     * Disable security checks for extend query.
+     */
+    dangerousExtend?: boolean
+    /**
+     * Alias mobile browsers to the desktop version when Can I Use
+     * doesn’t have data about the specified version.
+     */
+    mobileToDesktop?: boolean
+  }
+
+  type Config = {
+    defaults: string[]
+    [section: string]: string[] | undefined
+  }
+
+  interface Stats {
+    [browser: string]: {
+      [version: string]: number
+    }
+  }
+
+  /**
+   * Browser names aliases.
+   */
+  let aliases: {
+    [alias: string]: string | undefined
+  }
+
+  /**
+   * Aliases to work with joined versions like `ios_saf 7.0-7.1`.
+   */
+  let versionAliases: {
+    [browser: string]:
+      | {
+          [version: string]: string | undefined
+        }
+      | undefined
+  }
+
+  /**
+   * Can I Use only provides a few versions for some browsers (e.g. `and_chr`).
+   *
+   * Fallback to a similar browser for unknown versions.
+   */
+  let desktopNames: {
+    [browser: string]: string | undefined
+  }
+
+  let data: {
+    [browser: string]:
+      | {
+          name: string
+          versions: string[]
+          released: string[]
+          releaseDate: {
+            [version: string]: number | undefined | null
+          }
+        }
+      | undefined
+  }
+
+  let nodeVersions: string[]
+
+  interface Usage {
+    [version: string]: number
+  }
+
+  let usage: {
+    global?: Usage
+    custom?: Usage | null
+    [country: string]: Usage | undefined | null
+  }
+
+  let cache: {
+    [feature: string]: {
+      [name: string]: {
+        [version: string]: string
+      }
+    }
+  }
+
+  /**
+   * Default browsers query
+   */
+  let defaults: readonly string[]
+
+  /**
+   * Which statistics should be used. Country code or custom statistics.
+   * Pass `"my stats"` to load statistics from `Browserslist` files.
+   */
+  type StatsOptions = string | 'my stats' | Stats | { dataByBrowser: Stats }
+
+  /**
+   * Return browsers market coverage.
+   *
+   * ```js
+   * browserslist.coverage(browserslist('> 1% in US'), 'US') //=> 83.1
+   * ```
+   *
+   * @param browsers Browsers names in Can I Use.
+   * @param stats Which statistics should be used.
+   * @returns Total market coverage for all selected browsers.
+   */
+  function coverage(browsers: readonly string[], stats?: StatsOptions): number
+
+  /**
+   * Get queries AST to analyze the config content.
+   *
+   * @param queries Browser queries.
+   * @param opts Options.
+   * @returns An array of the data of each query in the config.
+   */
+  function parse(
+    queries?: string | readonly string[] | null,
+    opts?: browserslist.Options
+  ): Query[]
+
+  function clearCaches(): void
+
+  function parseConfig(string: string): Config
+
+  function readConfig(file: string): Config
+
+  function findConfig(...pathSegments: string[]): Config | undefined
+
+  interface LoadConfigOptions {
+    config?: string
+    path?: string
+    env?: string
+  }
+
+  function loadConfig(options: LoadConfigOptions): string[] | undefined
 }
-export declare const minimatch: {
-    (p: string, pattern: string, options?: MinimatchOptions): boolean;
-    sep: Sep;
-    GLOBSTAR: typeof GLOBSTAR;
-    filter: (pattern: string, options?: MinimatchOptions) => (p: string) => boolean;
-    defaults: (def: MinimatchOptions) => typeof minimatch;
-    braceExpand: (pattern: string, options?: MinimatchOptions) => string[];
-    makeRe: (pattern: string, options?: MinimatchOptions) => false | MMRegExp;
-    match: (list: string[], pattern: string, options?: MinimatchOptions) => string[];
-    AST: typeof AST;
-    Minimatch: typeof Minimatch;
-    escape: (s: string, { windowsPathsNoEscape, }?: Pick<MinimatchOptions, "windowsPathsNoEscape">) => string;
-    unescape: (s: string, { windowsPathsNoEscape, }?: Pick<MinimatchOptions, "windowsPathsNoEscape">) => string;
-};
-type Sep = '\\' | '/';
-export declare const sep: Sep;
-export declare const GLOBSTAR: unique symbol;
-export declare const filter: (pattern: string, options?: MinimatchOptions) => (p: string) => boolean;
-export declare const defaults: (def: MinimatchOptions) => typeof minimatch;
-export declare const braceExpand: (pattern: string, options?: MinimatchOptions) => string[];
-export declare const makeRe: (pattern: string, options?: MinimatchOptions) => false | MMRegExp;
-export declare const match: (list: string[], pattern: string, options?: MinimatchOptions) => string[];
-export type MMRegExp = RegExp & {
-    _src?: string;
-    _glob?: string;
-};
-export type ParseReturnFiltered = string | MMRegExp | typeof GLOBSTAR;
-export type ParseReturn = ParseReturnFiltered | false;
-export declare class Minimatch {
-    options: MinimatchOptions;
-    set: ParseReturnFiltered[][];
-    pattern: string;
-    windowsPathsNoEscape: boolean;
-    nonegate: boolean;
-    negate: boolean;
-    comment: boolean;
-    empty: boolean;
-    preserveMultipleSlashes: boolean;
-    partial: boolean;
-    globSet: string[];
-    globParts: string[][];
-    nocase: boolean;
-    isWindows: boolean;
-    platform: Platform;
-    windowsNoMagicRoot: boolean;
-    regexp: false | null | MMRegExp;
-    constructor(pattern: string, options?: MinimatchOptions);
-    hasMagic(): boolean;
-    debug(..._: any[]): void;
-    make(): void;
-    preprocess(globParts: string[][]): string[][];
-    adjascentGlobstarOptimize(globParts: string[][]): string[][];
-    levelOneOptimize(globParts: string[][]): string[][];
-    levelTwoFileOptimize(parts: string | string[]): string[];
-    firstPhasePreProcess(globParts: string[][]): string[][];
-    secondPhasePreProcess(globParts: string[][]): string[][];
-    partsMatch(a: string[], b: string[], emptyGSMatch?: boolean): false | string[];
-    parseNegate(): void;
-    matchOne(file: string[], pattern: ParseReturn[], partial?: boolean): boolean;
-    braceExpand(): string[];
-    parse(pattern: string): ParseReturn;
-    makeRe(): false | MMRegExp;
-    slashSplit(p: string): string[];
-    match(f: string, partial?: boolean): boolean;
-    static defaults(def: MinimatchOptions): typeof Minimatch;
+
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      BROWSERSLIST?: string
+      BROWSERSLIST_CONFIG?: string
+      BROWSERSLIST_DANGEROUS_EXTEND?: string
+      BROWSERSLIST_DISABLE_CACHE?: string
+      BROWSERSLIST_ENV?: string
+      BROWSERSLIST_IGNORE_OLD_DATA?: string
+      BROWSERSLIST_STATS?: string
+      BROWSERSLIST_ROOT_PATH?: string
+    }
+  }
 }
-export { AST } from './ast.js';
-export { escape } from './escape.js';
-export { unescape } from './unescape.js';
-//# sourceMappingURL=index.d.ts.map
+
+export = browserslist

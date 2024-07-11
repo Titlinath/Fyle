@@ -1,8 +1,7 @@
-import Settings from '../../settings';
-import { ErrorFilterFunction } from '../../types';
-export default class ErrorFilter {
-    private readonly _settings;
-    constructor(_settings: Settings);
-    getFilter(): ErrorFilterFunction;
-    private _isNonFatalError;
+declare class BrowserslistError extends Error {
+  constructor(message: any)
+  name: 'BrowserslistError'
+  browserslist: true
 }
+
+export = BrowserslistError

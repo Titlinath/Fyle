@@ -1,48 +1,69 @@
-# callsites [![Build Status](https://travis-ci.org/sindresorhus/callsites.svg?branch=master)](https://travis-ci.org/sindresorhus/callsites)
+# Buffer From
 
-> Get callsites from the [V8 stack trace API](https://v8.dev/docs/stack-trace-api)
+A [ponyfill](https://ponyfill.com) for `Buffer.from`, uses native implementation if available.
 
+## Installation
 
-## Install
-
+```sh
+npm install --save buffer-from
 ```
-$ npm install callsites
-```
-
 
 ## Usage
 
 ```js
-const callsites = require('callsites');
+const bufferFrom = require('buffer-from')
 
-function unicorn() {
-	console.log(callsites()[0].getFileName());
-	//=> '/Users/sindresorhus/dev/callsites/test.js'
-}
+console.log(bufferFrom([1, 2, 3, 4]))
+//=> <Buffer 01 02 03 04>
 
-unicorn();
+const arr = new Uint8Array([1, 2, 3, 4])
+console.log(bufferFrom(arr.buffer, 1, 2))
+//=> <Buffer 02 03>
+
+console.log(bufferFrom('test', 'utf8'))
+//=> <Buffer 74 65 73 74>
+
+const buf = bufferFrom('test')
+console.log(bufferFrom(buf))
+//=> <Buffer 74 65 73 74>
 ```
-
 
 ## API
 
-Returns an array of callsite objects with the following methods:
+### bufferFrom(array)
 
-- `getThis`: returns the value of `this`.
-- `getTypeName`: returns the type of `this` as a string. This is the name of the function stored in the constructor field of `this`, if available, otherwise the object's `[[Class]]` internal property.
-- `getFunction`: returns the current function.
-- `getFunctionName`: returns the name of the current function, typically its `name` property. If a name property is not available an attempt will be made to try to infer a name from the function's context.
-- `getMethodName`: returns the name of the property of `this` or one of its prototypes that holds the current function.
-- `getFileName`: if this function was defined in a script returns the name of the script.
-- `getLineNumber`: if this function was defined in a script returns the current line number.
-- `getColumnNumber`: if this function was defined in a script returns the current column number
-- `getEvalOrigin`: if this function was created using a call to `eval` returns a string representing the location where `eval` was called.
-- `isToplevel`: is this a top-level invocation, that is, is this the global object?
-- `isEval`: does this call take place in code defined by a call to `eval`?
-- `isNative`: is this call in native V8 code?
-- `isConstructor`: is this a constructor call?
+- `array` &lt;Array&gt;
 
+Allocates a new `Buffer` using an `array` of octets.
 
-## License
+### bufferFrom(arrayBuffer[, byteOffset[, length]])
 
-MIT © [Sindre Sorhus](https://sindresorhus.com)
+- `arrayBuffer` &lt;ArrayBuffer&gt; The `.buffer` property of a TypedArray or ArrayBuffer
+- `byteOffset` &lt;Integer&gt; Where to start copying from `arrayBuffer`. **Default:** `0`
+- `length` &lt;Integer&gt; How many bytes to copy from `arrayBuffer`. **Default:** `arrayBuffer.length - byteOffset`
+
+When passed a reference to the `.buffer` property of a TypedArray instance, the
+newly created `Buffer` will share the same allocated memory as the TypedArray.
+
+The optional `byteOffset` and `length` arguments specify a memory range within
+the `arrayBuffer` that will be shared by the `Buffer`.
+
+### bufferFrom(buffer)
+
+- `buffer` &lt;Buffer&gt; An existing `Buffer` to copy data from
+
+Copies the passed `buffer` data onto a new `Buffer` instance.
+
+### bufferFrom(string[, encoding])
+
+- `string` &lt;String&gt; A string to encode.
+- `encoding` &lt;String&gt; The encoding of `string`. **Default:** `'utf8'`
+
+Creates a new `Buffer` containing the given JavaScript string `string`. If
+provided, the `encoding` parameter identifies the character encoding of
+`string`.
+
+## See also
+
+- [buffer-alloc](https://github.com/LinusU/buffer-alloc) A ponyfill for `Buffer.alloc`
+- [buffer-alloc-unsafe](https://github.com/LinusU/buffer-alloc-unsafe) A ponyfill for `Buffer.allocUnsafe`
