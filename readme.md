@@ -1,65 +1,51 @@
-# get-east-asian-width
+# ms
 
-> Determine the [East Asian Width](https://unicode.org/reports/tr11/) of a Unicode character
+[![Build Status](https://travis-ci.org/zeit/ms.svg?branch=master)](https://travis-ci.org/zeit/ms)
+[![Slack Channel](http://zeit-slackin.now.sh/badge.svg)](https://zeit.chat/)
 
-> East Asian Width categorizes Unicode characters based on their occupied space in East Asian typography, which helps in text layout and alignment, particularly in languages like Japanese, Chinese, and Korean.
+Use this package to easily convert various time formats to milliseconds.
 
-Unlike other similar packages, this package uses the latest Unicode data (which changes each year).
-
-## Install
-
-```sh
-npm install get-east-asian-width
-```
-
-## Usage
+## Examples
 
 ```js
-import {eastAsianWidth, eastAsianWidthType} from 'get-east-asian-width';
-
-const codePoint = '字'.codePointAt(0);
-
-console.log(eastAsianWidth(codePoint));
-//=> 2
-
-console.log(eastAsianWidthType(codePoint));
-//=> 'wide'
+ms('2 days')  // 172800000
+ms('1d')      // 86400000
+ms('10h')     // 36000000
+ms('2.5 hrs') // 9000000
+ms('2h')      // 7200000
+ms('1m')      // 60000
+ms('5s')      // 5000
+ms('1y')      // 31557600000
+ms('100')     // 100
 ```
 
-## `eastAsianWidth(codePoint: number, options?: object): 1 | 2`
-
-Returns the width as a number for the given code point.
-
-### options
-
-Type: `object`
-
-#### ambiguousAsWide
-
-Type: `boolean`\
-Default: `false`
-
-Whether to treat an `'ambiguous'` character as wide.
+### Convert from milliseconds
 
 ```js
-import {eastAsianWidth} from 'get-east-asian-width';
-
-const codePoint = '⛣'.codePointAt(0);
-
-console.log(eastAsianWidth(codePoint));
-//=> 1
-
-console.log(eastAsianWidth(codePoint, {ambiguousAsWide: true}));
-//=> 2
+ms(60000)             // "1m"
+ms(2 * 60000)         // "2m"
+ms(ms('10 hours'))    // "10h"
 ```
 
-> Ambiguous characters behave like wide or narrow characters depending on the context (language tag, script identification, associated font, source of data, or explicit markup; all can provide the context). **If the context cannot be established reliably, they should be treated as narrow characters by default.**
-> - http://www.unicode.org/reports/tr11/
+### Time format written-out
 
-## `eastAsianWidthType(codePoint: number): 'fullwidth' | 'halfwidth' | 'wide' | 'narrow' | 'neutral' | 'ambiguous'`
+```js
+ms(60000, { long: true })             // "1 minute"
+ms(2 * 60000, { long: true })         // "2 minutes"
+ms(ms('10 hours'), { long: true })    // "10 hours"
+```
 
-Returns the type of “East Asian Width” for the given code point.
+## Features
 
-## Related
+- Works both in [node](https://nodejs.org) and in the browser.
+- If a number is supplied to `ms`, a string with a unit is returned.
+- If a string that contains the number is supplied, it returns it as a number (e.g.: it returns `100` for `'100'`).
+- If you pass a string with a number and a valid unit, the number of equivalent ms is returned.
 
-- [string-width](https://github.com/sindresorhus/string-width) - Get the visual width of a string
+## Caught a bug?
+
+1. [Fork](https://help.github.com/articles/fork-a-repo/) this repository to your own GitHub account and then [clone](https://help.github.com/articles/cloning-a-repository/) it to your local device
+2. Link the package to the global module directory: `npm link`
+3. Within the module you want to test your local development instance of ms, just link it to the dependencies: `npm link ms`. Instead of the default one from npm, node will now use your clone of ms!
+
+As always, you can run the tests using: `npm test`

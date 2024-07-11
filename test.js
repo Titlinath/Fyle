@@ -1,235 +1,643 @@
-var globToRegexp = require("./index.js");
-var assert = require("assert");
+/* globals suite test */
 
-function assertMatch(glob, str, opts) {
-  //console.log(glob, globToRegexp(glob, opts));
-  assert.ok(globToRegexp(glob, opts).test(str));
+const assert = require('assert')
+const path = require('path')
+const { exec } = require('child_process')
+const pkg = require('../package.json')
+const flat = require('../index')
+
+const flatten = flat.flatten
+const unflatten = flat.unflatten
+
+const primitives = {
+  String: 'good morning',
+  Number: 1234.99,
+  Boolean: true,
+  Date: new Date(),
+  null: null,
+  undefined: undefined
 }
 
-function assertNotMatch(glob, str, opts) {
-  //console.log(glob, globToRegexp(glob, opts));
-  assert.equal(false, globToRegexp(glob, opts).test(str));
-}
+suite('Flatten Primitives', function () {
+  Object.keys(primitives).forEach(function (key) {
+    const value = primitives[key]
 
-function test(globstar) {
-  // Match everything
-  assertMatch("*", "foo");
-  assertMatch("*", "foo", { flags: 'g' });
+    test(key, function () {
+      assert.deepStrictEqual(flatten({
+        hello: {
+          world: value
+        }
+      }), {
+        'hello.world': value
+      })
+    })
+  })
+})
 
-  // Match the end
-  assertMatch("f*", "foo");
-  assertMatch("f*", "foo", { flags: 'g' });
+suite('Unflatten Primitives', function () {
+  Object.keys(primitives).forEach(function (key) {
+    const value = primitives[key]
 
-  // Match the start
-  assertMatch("*o", "foo");
-  assertMatch("*o", "foo", { flags: 'g' });
+    test(key, function () {
+      assert.deepStrictEqual(unflatten({
+        'hello.world': value
+      }), {
+        hello: {
+          world: value
+        }
+      })
+    })
+  })
+})
 
-  // Match the middle
-  assertMatch("f*uck", "firetruck");
-  assertMatch("f*uck", "firetruck", { flags: 'g' });
+suite('Flatten', function () {
+  test('Nested once', function () {
+    assert.deepStrictEqual(flatten({
+      hello: {
+        world: 'good morning'
+      }
+    }), {
+      'hello.world': 'good morning'
+    })
+  })
 
-  // Don't match without Regexp 'g'
-  assertNotMatch("uc", "firetruck");
-  // Match anywhere with RegExp 'g'
-  assertMatch("uc", "firetruck", { flags: 'g' });
+  test('Nested twice', function () {
+    assert.deepStrictEqual(flatten({
+      hello: {
+        world: {
+          again: 'good morning'
+        }
+      }
+    }), {
+      'hello.world.again': 'good morning'
+    })
+  })
 
-  // Match zero characters
-  assertMatch("f*uck", "fuck");
-  assertMatch("f*uck", "fuck", { flags: 'g' });
+  test('Multiple Keys', function () {
+    assert.deepStrictEqual(flatten({
+      hello: {
+        lorem: {
+          ipsum: 'again',
+          dolor: 'sit'
+        }
+      },
+      world: {
+        lorem: {
+          ipsum: 'again',
+          dolor: 'sit'
+        }
+      }
+    }), {
+      'hello.lorem.ipsum': 'again',
+      'hello.lorem.dolor': 'sit',
+      'world.lorem.ipsum': 'again',
+      'world.lorem.dolor': 'sit'
+    })
+  })
 
-  // More complex matches
-  assertMatch("*.min.js", "http://example.com/jquery.min.js", {globstar: false});
-  assertMatch("*.min.*", "http://example.com/jquery.min.js", {globstar: false});
-  assertMatch("*/js/*.js", "http://example.com/js/jquery.min.js", {globstar: false});
+  test('Custom Delimiter', function () {
+    assert.deepStrictEqual(flatten({
+      hello: {
+        world: {
+          again: 'good morning'
+        }
+      }
+    }, {
+      delimiter: ':'
+    }), {
+      'hello:world:again': 'good morning'
+    })
+  })
 
-  // More complex matches with RegExp 'g' flag (complex regression)
-  assertMatch("*.min.*", "http://example.com/jquery.min.js", { flags: 'g' });
-  assertMatch("*.min.js", "http://example.com/jquery.min.js", { flags: 'g' });
-  assertMatch("*/js/*.js", "http://example.com/js/jquery.min.js", { flags: 'g' });
+  test('Empty Objects', function () {
+    assert.deepStrictEqual(flatten({
+      hello: {
+        empty: {
+          nested: {}
+        }
+      }
+    }), {
+      'hello.empty.nested': {}
+    })
+  })
 
-  // Test string  "\\\\/$^+?.()=!|{},[].*"  represents  <glob>\\/$^+?.()=!|{},[].*</glob>
-  // The equivalent regex is:  /^\\\/\$\^\+\?\.\(\)\=\!\|\{\}\,\[\]\..*$/
-  // Both glob and regex match:  \/$^+?.()=!|{},[].*
-  var testStr = "\\\\/$^+?.()=!|{},[].*";
-  var targetStr = "\\/$^+?.()=!|{},[].*";
-  assertMatch(testStr, targetStr);
-  assertMatch(testStr, targetStr, { flags: 'g' });
+  if (typeof Buffer !== 'undefined') {
+    test('Buffer', function () {
+      assert.deepStrictEqual(flatten({
+        hello: {
+          empty: {
+            nested: Buffer.from('test')
+          }
+        }
+      }), {
+        'hello.empty.nested': Buffer.from('test')
+      })
+    })
+  }
 
-  // Equivalent matches without/with using RegExp 'g'
-  assertNotMatch(".min.", "http://example.com/jquery.min.js");
-  assertMatch("*.min.*", "http://example.com/jquery.min.js");
-  assertMatch(".min.", "http://example.com/jquery.min.js", { flags: 'g' });
+  if (typeof Uint8Array !== 'undefined') {
+    test('typed arrays', function () {
+      assert.deepStrictEqual(flatten({
+        hello: {
+          empty: {
+            nested: new Uint8Array([1, 2, 3, 4])
+          }
+        }
+      }), {
+        'hello.empty.nested': new Uint8Array([1, 2, 3, 4])
+      })
+    })
+  }
 
-  assertNotMatch("http:", "http://example.com/jquery.min.js");
-  assertMatch("http:*", "http://example.com/jquery.min.js");
-  assertMatch("http:", "http://example.com/jquery.min.js", { flags: 'g' });
+  test('Custom Depth', function () {
+    assert.deepStrictEqual(flatten({
+      hello: {
+        world: {
+          again: 'good morning'
+        }
+      },
+      lorem: {
+        ipsum: {
+          dolor: 'good evening'
+        }
+      }
+    }, {
+      maxDepth: 2
+    }), {
+      'hello.world': {
+        again: 'good morning'
+      },
+      'lorem.ipsum': {
+        dolor: 'good evening'
+      }
+    })
+  })
 
-  assertNotMatch("min.js", "http://example.com/jquery.min.js");
-  assertMatch("*.min.js", "http://example.com/jquery.min.js");
-  assertMatch("min.js", "http://example.com/jquery.min.js", { flags: 'g' });
+  test('Transformed Keys', function () {
+    assert.deepStrictEqual(flatten({
+      hello: {
+        world: {
+          again: 'good morning'
+        }
+      },
+      lorem: {
+        ipsum: {
+          dolor: 'good evening'
+        }
+      }
+    }, {
+      transformKey: function (key) {
+        return '__' + key + '__'
+      }
+    }), {
+      '__hello__.__world__.__again__': 'good morning',
+      '__lorem__.__ipsum__.__dolor__': 'good evening'
+    })
+  })
 
-  // Match anywhere (globally) using RegExp 'g'
-  assertMatch("min", "http://example.com/jquery.min.js", { flags: 'g' });
-  assertMatch("/js/", "http://example.com/js/jquery.min.js", { flags: 'g' });
+  test('Should keep number in the left when object', function () {
+    assert.deepStrictEqual(flatten({
+      hello: {
+        '0200': 'world',
+        '0500': 'darkness my old friend'
+      }
+    }), {
+      'hello.0200': 'world',
+      'hello.0500': 'darkness my old friend'
+    })
+  })
+})
 
-  assertNotMatch("/js*jq*.js", "http://example.com/js/jquery.min.js");
-  assertMatch("/js*jq*.js", "http://example.com/js/jquery.min.js", { flags: 'g' });
+suite('Unflatten', function () {
+  test('Nested once', function () {
+    assert.deepStrictEqual({
+      hello: {
+        world: 'good morning'
+      }
+    }, unflatten({
+      'hello.world': 'good morning'
+    }))
+  })
 
-  // Extended mode
+  test('Nested twice', function () {
+    assert.deepStrictEqual({
+      hello: {
+        world: {
+          again: 'good morning'
+        }
+      }
+    }, unflatten({
+      'hello.world.again': 'good morning'
+    }))
+  })
 
-  // ?: Match one character, no more and no less
-  assertMatch("f?o", "foo", { extended: true });
-  assertNotMatch("f?o", "fooo", { extended: true });
-  assertNotMatch("f?oo", "foo", { extended: true });
+  test('Multiple Keys', function () {
+    assert.deepStrictEqual({
+      hello: {
+        lorem: {
+          ipsum: 'again',
+          dolor: 'sit'
+        }
+      },
+      world: {
+        greet: 'hello',
+        lorem: {
+          ipsum: 'again',
+          dolor: 'sit'
+        }
+      }
+    }, unflatten({
+      'hello.lorem.ipsum': 'again',
+      'hello.lorem.dolor': 'sit',
+      'world.lorem.ipsum': 'again',
+      'world.lorem.dolor': 'sit',
+      world: { greet: 'hello' }
+    }))
+  })
 
-  // ?: Match one character with RegExp 'g'
-  assertMatch("f?o", "foo", { extended: true,  globstar: globstar, flags: 'g' });
-  assertMatch("f?o", "fooo", { extended: true,  globstar: globstar, flags: 'g' });
-  assertMatch("f?o?", "fooo", { extended: true,  globstar: globstar, flags: 'g' });
-  assertNotMatch("?fo", "fooo", { extended: true,  globstar: globstar, flags: 'g' });
-  assertNotMatch("f?oo", "foo", { extended: true,  globstar: globstar, flags: 'g' });
-  assertNotMatch("foo?", "foo", { extended: true,  globstar: globstar, flags: 'g' });
+  test('nested objects do not clobber each other when a.b inserted before a', function () {
+    const x = {}
+    x['foo.bar'] = { t: 123 }
+    x.foo = { p: 333 }
+    assert.deepStrictEqual(unflatten(x), {
+      foo: {
+        bar: {
+          t: 123
+        },
+        p: 333
+      }
+    })
+  })
 
-  // []: Match a character range
-  assertMatch("fo[oz]", "foo", { extended: true });
-  assertMatch("fo[oz]", "foz", { extended: true });
-  assertNotMatch("fo[oz]", "fog", { extended: true });
+  test('Custom Delimiter', function () {
+    assert.deepStrictEqual({
+      hello: {
+        world: {
+          again: 'good morning'
+        }
+      }
+    }, unflatten({
+      'hello world again': 'good morning'
+    }, {
+      delimiter: ' '
+    }))
+  })
 
-  // []: Match a character range and RegExp 'g' (regresion)
-  assertMatch("fo[oz]", "foo", { extended: true,  globstar: globstar, flags: 'g' });
-  assertMatch("fo[oz]", "foz", { extended: true,  globstar: globstar, flags: 'g' });
-  assertNotMatch("fo[oz]", "fog", { extended: true,  globstar: globstar, flags: 'g' });
+  test('Overwrite', function () {
+    assert.deepStrictEqual({
+      travis: {
+        build: {
+          dir: '/home/travis/build/kvz/environmental'
+        }
+      }
+    }, unflatten({
+      travis: 'true',
+      travis_build_dir: '/home/travis/build/kvz/environmental'
+    }, {
+      delimiter: '_',
+      overwrite: true
+    }))
+  })
 
-  // {}: Match a choice of different substrings
-  assertMatch("foo{bar,baaz}", "foobaaz", { extended: true });
-  assertMatch("foo{bar,baaz}", "foobar", { extended: true });
-  assertNotMatch("foo{bar,baaz}", "foobuzz", { extended: true });
-  assertMatch("foo{bar,b*z}", "foobuzz", { extended: true });
+  test('Transformed Keys', function () {
+    assert.deepStrictEqual(unflatten({
+      '__hello__.__world__.__again__': 'good morning',
+      '__lorem__.__ipsum__.__dolor__': 'good evening'
+    }, {
+      transformKey: function (key) {
+        return key.substring(2, key.length - 2)
+      }
+    }), {
+      hello: {
+        world: {
+          again: 'good morning'
+        }
+      },
+      lorem: {
+        ipsum: {
+          dolor: 'good evening'
+        }
+      }
+    })
+  })
 
-  // {}: Match a choice of different substrings and RegExp 'g' (regression)
-  assertMatch("foo{bar,baaz}", "foobaaz", { extended: true,  globstar: globstar, flags: 'g' });
-  assertMatch("foo{bar,baaz}", "foobar", { extended: true,  globstar: globstar, flags: 'g' });
-  assertNotMatch("foo{bar,baaz}", "foobuzz", { extended: true,  globstar: globstar, flags: 'g' });
-  assertMatch("foo{bar,b*z}", "foobuzz", { extended: true,  globstar: globstar, flags: 'g' });
+  test('Messy', function () {
+    assert.deepStrictEqual({
+      hello: { world: 'again' },
+      lorem: { ipsum: 'another' },
+      good: {
+        morning: {
+          hash: {
+            key: {
+              nested: {
+                deep: {
+                  and: {
+                    even: {
+                      deeper: { still: 'hello' }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          again: { testing: { this: 'out' } }
+        }
+      }
+    }, unflatten({
+      'hello.world': 'again',
+      'lorem.ipsum': 'another',
+      'good.morning': {
+        'hash.key': {
+          'nested.deep': {
+            'and.even.deeper.still': 'hello'
+          }
+        }
+      },
+      'good.morning.again': {
+        'testing.this': 'out'
+      }
+    }))
+  })
 
-  // More complex extended matches
-  assertMatch("http://?o[oz].b*z.com/{*.js,*.html}",
-              "http://foo.baaz.com/jquery.min.js",
-              { extended: true });
-  assertMatch("http://?o[oz].b*z.com/{*.js,*.html}",
-              "http://moz.buzz.com/index.html",
-              { extended: true });
-  assertNotMatch("http://?o[oz].b*z.com/{*.js,*.html}",
-                 "http://moz.buzz.com/index.htm",
-                 { extended: true });
-  assertNotMatch("http://?o[oz].b*z.com/{*.js,*.html}",
-                 "http://moz.bar.com/index.html",
-                 { extended: true });
-  assertNotMatch("http://?o[oz].b*z.com/{*.js,*.html}",
-                 "http://flozz.buzz.com/index.html",
-                 { extended: true });
+  suite('Overwrite + non-object values in key positions', function () {
+    test('non-object keys + overwrite should be overwritten', function () {
+      assert.deepStrictEqual(flat.unflatten({ a: null, 'a.b': 'c' }, { overwrite: true }), { a: { b: 'c' } })
+      assert.deepStrictEqual(flat.unflatten({ a: 0, 'a.b': 'c' }, { overwrite: true }), { a: { b: 'c' } })
+      assert.deepStrictEqual(flat.unflatten({ a: 1, 'a.b': 'c' }, { overwrite: true }), { a: { b: 'c' } })
+      assert.deepStrictEqual(flat.unflatten({ a: '', 'a.b': 'c' }, { overwrite: true }), { a: { b: 'c' } })
+    })
 
-  // More complex extended matches and RegExp 'g' (regresion)
-  assertMatch("http://?o[oz].b*z.com/{*.js,*.html}",
-              "http://foo.baaz.com/jquery.min.js",
-              { extended: true,  globstar: globstar, flags: 'g' });
-  assertMatch("http://?o[oz].b*z.com/{*.js,*.html}",
-              "http://moz.buzz.com/index.html",
-              { extended: true,  globstar: globstar, flags: 'g' });
-  assertNotMatch("http://?o[oz].b*z.com/{*.js,*.html}",
-                 "http://moz.buzz.com/index.htm",
-                 { extended: true,  globstar: globstar, flags: 'g' });
-  assertNotMatch("http://?o[oz].b*z.com/{*.js,*.html}",
-                 "http://moz.bar.com/index.html",
-                 { extended: true,  globstar: globstar, flags: 'g' });
-  assertNotMatch("http://?o[oz].b*z.com/{*.js,*.html}",
-                 "http://flozz.buzz.com/index.html",
-                 { extended: true,  globstar: globstar, flags: 'g' });
+    test('overwrite value should not affect undefined keys', function () {
+      assert.deepStrictEqual(flat.unflatten({ a: undefined, 'a.b': 'c' }, { overwrite: true }), { a: { b: 'c' } })
+      assert.deepStrictEqual(flat.unflatten({ a: undefined, 'a.b': 'c' }, { overwrite: false }), { a: { b: 'c' } })
+    })
 
-  // globstar
-  assertMatch("http://foo.com/**/{*.js,*.html}",
-              "http://foo.com/bar/jquery.min.js",
-              { extended: true,  globstar: globstar, flags: 'g' });
-  assertMatch("http://foo.com/**/{*.js,*.html}",
-              "http://foo.com/bar/baz/jquery.min.js",
-              { extended: true,  globstar: globstar, flags: 'g' });
-  assertMatch("http://foo.com/**",
-              "http://foo.com/bar/baz/jquery.min.js",
-              { extended: true,  globstar: globstar, flags: 'g' });
+    test('if no overwrite, should ignore nested values under non-object key', function () {
+      assert.deepStrictEqual(flat.unflatten({ a: null, 'a.b': 'c' }), { a: null })
+      assert.deepStrictEqual(flat.unflatten({ a: 0, 'a.b': 'c' }), { a: 0 })
+      assert.deepStrictEqual(flat.unflatten({ a: 1, 'a.b': 'c' }), { a: 1 })
+      assert.deepStrictEqual(flat.unflatten({ a: '', 'a.b': 'c' }), { a: '' })
+    })
+  })
 
-  // Remaining special chars should still match themselves
-  // Test string  "\\\\/$^+.()=!|,.*"  represents  <glob>\\/$^+.()=!|,.*</glob>
-  // The equivalent regex is:  /^\\\/\$\^\+\.\(\)\=\!\|\,\..*$/
-  // Both glob and regex match:  \/$^+.()=!|,.*
-  var testExtStr = "\\\\/$^+.()=!|,.*";
-  var targetExtStr = "\\/$^+.()=!|,.*";
-  assertMatch(testExtStr, targetExtStr, { extended: true });
-  assertMatch(testExtStr, targetExtStr, { extended: true,  globstar: globstar, flags: 'g' });
-}
+  suite('.safe', function () {
+    test('Should protect arrays when true', function () {
+      assert.deepStrictEqual(flatten({
+        hello: [
+          { world: { again: 'foo' } },
+          { lorem: 'ipsum' }
+        ],
+        another: {
+          nested: [{ array: { too: 'deep' } }]
+        },
+        lorem: {
+          ipsum: 'whoop'
+        }
+      }, {
+        safe: true
+      }), {
+        hello: [
+          { world: { again: 'foo' } },
+          { lorem: 'ipsum' }
+        ],
+        'lorem.ipsum': 'whoop',
+        'another.nested': [{ array: { too: 'deep' } }]
+      })
+    })
 
-// regression
-// globstar false
-test(false)
-// globstar true
-test(true);
+    test('Should not protect arrays when false', function () {
+      assert.deepStrictEqual(flatten({
+        hello: [
+          { world: { again: 'foo' } },
+          { lorem: 'ipsum' }
+        ]
+      }, {
+        safe: false
+      }), {
+        'hello.0.world.again': 'foo',
+        'hello.1.lorem': 'ipsum'
+      })
+    })
 
-// globstar specific tests
-assertMatch("/foo/*", "/foo/bar.txt", {globstar: true });
-assertMatch("/foo/**", "/foo/baz.txt", {globstar: true });
-assertMatch("/foo/**", "/foo/bar/baz.txt", {globstar: true });
-assertMatch("/foo/*/*.txt", "/foo/bar/baz.txt", {globstar: true });
-assertMatch("/foo/**/*.txt", "/foo/bar/baz.txt", {globstar: true });
-assertMatch("/foo/**/*.txt", "/foo/bar/baz/qux.txt", {globstar: true });
-assertMatch("/foo/**/bar.txt", "/foo/bar.txt", {globstar: true });
-assertMatch("/foo/**/**/bar.txt", "/foo/bar.txt", {globstar: true });
-assertMatch("/foo/**/*/baz.txt", "/foo/bar/baz.txt", {globstar: true });
-assertMatch("/foo/**/*.txt", "/foo/bar.txt", {globstar: true });
-assertMatch("/foo/**/**/*.txt", "/foo/bar.txt", {globstar: true });
-assertMatch("/foo/**/*/*.txt", "/foo/bar/baz.txt", {globstar: true });
-assertMatch("**/*.txt", "/foo/bar/baz/qux.txt", {globstar: true });
-assertMatch("**/foo.txt", "foo.txt", {globstar: true });
-assertMatch("**/*.txt", "foo.txt", {globstar: true });
+    test('Empty objects should not be removed', function () {
+      assert.deepStrictEqual(unflatten({
+        foo: [],
+        bar: {}
+      }), { foo: [], bar: {} })
+    })
+  })
 
-assertNotMatch("/foo/*", "/foo/bar/baz.txt", {globstar: true });
-assertNotMatch("/foo/*.txt", "/foo/bar/baz.txt", {globstar: true });
-assertNotMatch("/foo/*/*.txt", "/foo/bar/baz/qux.txt", {globstar: true });
-assertNotMatch("/foo/*/bar.txt", "/foo/bar.txt", {globstar: true });
-assertNotMatch("/foo/*/*/baz.txt", "/foo/bar/baz.txt", {globstar: true });
-assertNotMatch("/foo/**.txt", "/foo/bar/baz/qux.txt", {globstar: true });
-assertNotMatch("/foo/bar**/*.txt", "/foo/bar/baz/qux.txt", {globstar: true });
-assertNotMatch("/foo/bar**", "/foo/bar/baz.txt", {globstar: true });
-assertNotMatch("**/.txt", "/foo/bar/baz/qux.txt", {globstar: true });
-assertNotMatch("*/*.txt", "/foo/bar/baz/qux.txt", {globstar: true });
-assertNotMatch("*/*.txt", "foo.txt", {globstar: true });
+  suite('.object', function () {
+    test('Should create object instead of array when true', function () {
+      const unflattened = unflatten({
+        'hello.you.0': 'ipsum',
+        'hello.you.1': 'lorem',
+        'hello.other.world': 'foo'
+      }, {
+        object: true
+      })
+      assert.deepStrictEqual({
+        hello: {
+          you: {
+            0: 'ipsum',
+            1: 'lorem'
+          },
+          other: { world: 'foo' }
+        }
+      }, unflattened)
+      assert(!Array.isArray(unflattened.hello.you))
+    })
 
-assertNotMatch("http://foo.com/*",
-               "http://foo.com/bar/baz/jquery.min.js",
-               { extended: true,  globstar: true });
-assertNotMatch("http://foo.com/*",
-               "http://foo.com/bar/baz/jquery.min.js",
-               { globstar: true });
+    test('Should create object instead of array when nested', function () {
+      const unflattened = unflatten({
+        hello: {
+          'you.0': 'ipsum',
+          'you.1': 'lorem',
+          'other.world': 'foo'
+        }
+      }, {
+        object: true
+      })
+      assert.deepStrictEqual({
+        hello: {
+          you: {
+            0: 'ipsum',
+            1: 'lorem'
+          },
+          other: { world: 'foo' }
+        }
+      }, unflattened)
+      assert(!Array.isArray(unflattened.hello.you))
+    })
 
-assertMatch("http://foo.com/*",
-            "http://foo.com/bar/baz/jquery.min.js",
-            { globstar: false });
-assertMatch("http://foo.com/**",
-            "http://foo.com/bar/baz/jquery.min.js",
-            { globstar: true });
+    test('Should keep the zero in the left when object is true', function () {
+      const unflattened = unflatten({
+        'hello.0200': 'world',
+        'hello.0500': 'darkness my old friend'
+      }, {
+        object: true
+      })
 
-assertMatch("http://foo.com/*/*/jquery.min.js",
-            "http://foo.com/bar/baz/jquery.min.js",
-            { globstar: true });
-assertMatch("http://foo.com/**/jquery.min.js",
-            "http://foo.com/bar/baz/jquery.min.js",
-            { globstar: true });
-assertMatch("http://foo.com/*/*/jquery.min.js",
-            "http://foo.com/bar/baz/jquery.min.js",
-            { globstar: false });
-assertMatch("http://foo.com/*/jquery.min.js",
-            "http://foo.com/bar/baz/jquery.min.js",
-            { globstar: false });
-assertNotMatch("http://foo.com/*/jquery.min.js",
-               "http://foo.com/bar/baz/jquery.min.js",
-               { globstar: true });
+      assert.deepStrictEqual({
+        hello: {
+          '0200': 'world',
+          '0500': 'darkness my old friend'
+        }
+      }, unflattened)
+    })
 
-console.log("Ok!");
+    test('Should not create object when false', function () {
+      const unflattened = unflatten({
+        'hello.you.0': 'ipsum',
+        'hello.you.1': 'lorem',
+        'hello.other.world': 'foo'
+      }, {
+        object: false
+      })
+      assert.deepStrictEqual({
+        hello: {
+          you: ['ipsum', 'lorem'],
+          other: { world: 'foo' }
+        }
+      }, unflattened)
+      assert(Array.isArray(unflattened.hello.you))
+    })
+  })
+
+  if (typeof Buffer !== 'undefined') {
+    test('Buffer', function () {
+      assert.deepStrictEqual(unflatten({
+        'hello.empty.nested': Buffer.from('test')
+      }), {
+        hello: {
+          empty: {
+            nested: Buffer.from('test')
+          }
+        }
+      })
+    })
+  }
+
+  if (typeof Uint8Array !== 'undefined') {
+    test('typed arrays', function () {
+      assert.deepStrictEqual(unflatten({
+        'hello.empty.nested': new Uint8Array([1, 2, 3, 4])
+      }), {
+        hello: {
+          empty: {
+            nested: new Uint8Array([1, 2, 3, 4])
+          }
+        }
+      })
+    })
+  }
+
+  test('should not pollute prototype', function () {
+    unflatten({
+      '__proto__.polluted': true
+    })
+    unflatten({
+      'prefix.__proto__.polluted': true
+    })
+    unflatten({
+      'prefix.0.__proto__.polluted': true
+    })
+
+    assert.notStrictEqual({}.polluted, true)
+  })
+})
+
+suite('Arrays', function () {
+  test('Should be able to flatten arrays properly', function () {
+    assert.deepStrictEqual({
+      'a.0': 'foo',
+      'a.1': 'bar'
+    }, flatten({
+      a: ['foo', 'bar']
+    }))
+  })
+
+  test('Should be able to revert and reverse array serialization via unflatten', function () {
+    assert.deepStrictEqual({
+      a: ['foo', 'bar']
+    }, unflatten({
+      'a.0': 'foo',
+      'a.1': 'bar'
+    }))
+  })
+
+  test('Array typed objects should be restored by unflatten', function () {
+    assert.strictEqual(
+      Object.prototype.toString.call(['foo', 'bar'])
+      , Object.prototype.toString.call(unflatten({
+        'a.0': 'foo',
+        'a.1': 'bar'
+      }).a)
+    )
+  })
+
+  test('Do not include keys with numbers inside them', function () {
+    assert.deepStrictEqual(unflatten({
+      '1key.2_key': 'ok'
+    }), {
+      '1key': {
+        '2_key': 'ok'
+      }
+    })
+  })
+})
+
+suite('Order of Keys', function () {
+  test('Order of keys should not be changed after round trip flatten/unflatten', function () {
+    const obj = {
+      b: 1,
+      abc: {
+        c: [{
+          d: 1,
+          bca: 1,
+          a: 1
+        }]
+      },
+      a: 1
+    }
+    const result = unflatten(
+      flatten(obj)
+    )
+
+    assert.deepStrictEqual(Object.keys(obj), Object.keys(result))
+    assert.deepStrictEqual(Object.keys(obj.abc), Object.keys(result.abc))
+    assert.deepStrictEqual(Object.keys(obj.abc.c[0]), Object.keys(result.abc.c[0]))
+  })
+})
+
+suite('CLI', function () {
+  test('can take filename', function (done) {
+    const cli = path.resolve(__dirname, '..', pkg.bin)
+    const pkgJSON = path.resolve(__dirname, '..', 'package.json')
+    exec(`${cli} ${pkgJSON}`, (err, stdout, stderr) => {
+      assert.ifError(err)
+      assert.strictEqual(stdout.trim(), JSON.stringify(flatten(pkg), null, 2))
+      done()
+    })
+  })
+
+  test('exits with usage if no file', function (done) {
+    const cli = path.resolve(__dirname, '..', pkg.bin)
+    const pkgJSON = path.resolve(__dirname, '..', 'package.json')
+    exec(`${cli} ${pkgJSON}`, (err, stdout, stderr) => {
+      assert.ifError(err)
+      assert.strictEqual(stdout.trim(), JSON.stringify(flatten(pkg), null, 2))
+      done()
+    })
+  })
+
+  test('can take piped file', function (done) {
+    const cli = path.resolve(__dirname, '..', pkg.bin)
+    const pkgJSON = path.resolve(__dirname, '..', 'package.json')
+    exec(`cat ${pkgJSON} | ${cli}`, (err, stdout, stderr) => {
+      assert.ifError(err)
+      assert.strictEqual(stdout.trim(), JSON.stringify(flatten(pkg), null, 2))
+      done()
+    })
+  })
+})
