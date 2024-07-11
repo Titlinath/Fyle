@@ -1,42 +1,43 @@
-module.exports = isexe
-isexe.sync = sync
+import {promisify} from 'node:util';
+import {execFile} from 'node:child_process';
 
-var fs = require('fs')
+const execFileAsync = promisify(execFile);
 
-function checkPathExt (path, options) {
-  var pathext = options.pathExt !== undefined ?
-    options.pathExt : process.env.PATHEXT
+// Windows doesn't have browser IDs in the same way macOS/Linux does so we give fake
+// ones that look real and match the macOS/Linux versions for cross-platform apps.
+const windowsBrowserProgIds = {
+	AppXq0fevzme2pys62n3e0fbqa7peapykr8v: {name: 'Edge', id: 'com.microsoft.edge.old'},
+	MSEdgeDHTML: {name: 'Edge', id: 'com.microsoft.edge'}, // On macOS, it's "com.microsoft.edgemac"
+	MSEdgeHTM: {name: 'Edge', id: 'com.microsoft.edge'}, // Newer Edge/Win10 releases
+	'IE.HTTP': {name: 'Internet Explorer', id: 'com.microsoft.ie'},
+	FirefoxURL: {name: 'Firefox', id: 'org.mozilla.firefox'},
+	ChromeHTML: {name: 'Chrome', id: 'com.google.chrome'},
+	BraveHTML: {name: 'Brave', id: 'com.brave.Browser'},
+	BraveBHTML: {name: 'Brave Beta', id: 'com.brave.Browser.beta'},
+	BraveSSHTM: {name: 'Brave Nightly', id: 'com.brave.Browser.nightly'},
+};
 
-  if (!pathext) {
-    return true
-  }
+export class UnknownBrowserError extends Error {}
 
-  pathext = pathext.split(';')
-  if (pathext.indexOf('') !== -1) {
-    return true
-  }
-  for (var i = 0; i < pathext.length; i++) {
-    var p = pathext[i].toLowerCase()
-    if (p && path.substr(-p.length).toLowerCase() === p) {
-      return true
-    }
-  }
-  return false
-}
+export default async function defaultBrowser(_execFileAsync = execFileAsync) {
+	const {stdout} = await _execFileAsync('reg', [
+		'QUERY',
+		' HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\http\\UserChoice',
+		'/v',
+		'ProgId',
+	]);
 
-function checkStat (stat, path, options) {
-  if (!stat.isSymbolicLink() && !stat.isFile()) {
-    return false
-  }
-  return checkPathExt(path, options)
-}
+	const match = /ProgId\s*REG_SZ\s*(?<id>\S+)/.exec(stdout);
+	if (!match) {
+		throw new UnknownBrowserError(`Cannot find Windows browser in stdout: ${JSON.stringify(stdout)}`);
+	}
 
-function isexe (path, options, cb) {
-  fs.stat(path, function (er, stat) {
-    cb(er, er ? false : checkStat(stat, path, options))
-  })
-}
+	const {id} = match.groups;
 
-function sync (path, options) {
-  return checkStat(fs.statSync(path), path, options)
+	const browser = windowsBrowserProgIds[id];
+	if (!browser) {
+		throw new UnknownBrowserError(`Unknown browser ID: ${id}`);
+	}
+
+	return browser;
 }

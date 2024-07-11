@@ -1,70 +1,116 @@
-# Changelog
+# date-format Changelog
 
-All notable changes to this project will be documented in this file.
+## 4.0.14
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/86) - thanks [@lamweili](https://github.com/lamweili)
+  - chore(deps-dev): bump eslint from 4.19.1 to 8.24.0
+  - chore(deps-dev): bump eslint-plugin-mocha from 4.12.1 to 10.1.0
+  - chore(deps-dev): bump mocha from 5.2.0 to 10.0.0
+  - chore(deps-dev): bump nyc from 13.0.0 to 15.1.0
+- [ci: manually downgrade dev dependencies for older versions](https://github.com/nomiddlename/date-format/pull/87) - thanks [@lamweili](https://github.com/lamweili)
+- [ci: separated npm audit](https://github.com/nomiddlename/date-format/pull/85) - thanks [@lamweili](https://github.com/lamweili)
+- [ci: updated codeql from v1 to v2](https://github.com/nomiddlename/date-format/pull/80) - thanks [@lamweili](https://github.com/lamweili)
 
-## [v1.1.4](https://github.com/ljharb/define-data-property/compare/v1.1.3...v1.1.4) - 2024-02-13
+## 4.0.13
 
-### Commits
+- [ci: added tests for Node.js 4.x, 6.x, 8.x, 10.x, 18.x](https://github.com/nomiddlename/date-format/pull/75) - thanks [@lamweili](https://github.com/lamweili)
+  - [chore(deps-dev): bump hosted-git-info from 2.6.0 to 2.8.9](https://github.com/nomiddlename/date-format/pull/76) - thanks [@Dependabot](https://github.com/dependabot)
+  - [chore(deps-dev): bump handlebars from 4.0.11 to 4.7.7 ](https://github.com/nomiddlename/date-format/pull/77) - thanks [@Dependabot](https://github.com/dependabot)
+  - [chore(deps-dev): bump y18n from 3.2.1 to 3.2.2](https://github.com/nomiddlename/date-format/pull/78) - thanks [@Dependabot](https://github.com/dependabot)
 
-- [Refactor] use `es-define-property` [`90f2f4c`](https://github.com/ljharb/define-data-property/commit/90f2f4cc20298401e71c28e1e08888db12021453)
-- [Dev Deps] update `@types/object.getownpropertydescriptors` [`cd929d9`](https://github.com/ljharb/define-data-property/commit/cd929d9a04f5f2fdcfa9d5be140940b91a083153)
+## 4.0.12
 
-## [v1.1.3](https://github.com/ljharb/define-data-property/compare/v1.1.2...v1.1.3) - 2024-02-12
+- [ci: added tests for Node.js 8.x, 10.x, 18.x](https://github.com/nomiddlename/date-format/pull/73) - thanks [@lamweili](https://github.com/lamweili)
+- [docs: renamed peteriman to lamweili](https://github.com/nomiddlename/date-format/pull/72) - thanks [@lamweili](https://github.com/lamweili)
 
-### Commits
+## 4.0.11
 
-- [types] hand-write d.ts instead of emitting it [`0cbc988`](https://github.com/ljharb/define-data-property/commit/0cbc988203c105f2d97948327c7167ebd33bd318)
-- [meta] simplify `exports` [`690781e`](https://github.com/ljharb/define-data-property/commit/690781eed28bbf2d6766237efda0ba6dd591609e)
-- [Dev Deps] update `hasown`; clean up DT packages [`6cdfd1c`](https://github.com/ljharb/define-data-property/commit/6cdfd1cb2d91d791bfd18cda5d5cab232fd5d8fc)
-- [actions] cleanup [`3142bc6`](https://github.com/ljharb/define-data-property/commit/3142bc6a4bc406a51f5b04f31e98562a27f35ffd)
-- [meta] add `funding` [`8474423`](https://github.com/ljharb/define-data-property/commit/847442391a79779af3e0f1bf0b5bb923552b7804)
-- [Deps] update `get-intrinsic` [`3e9be00`](https://github.com/ljharb/define-data-property/commit/3e9be00e07784ba34e7c77d8bc0fdbc832ad61de)
+- [fix: date parsing errors (wrong month due to days overflow)](https://github.com/nomiddlename/date-format/pull/68) - thanks [@lamweili](https://github.com/lamweili)
+  - [test: use new Date(0) instead of new Date() before setting every field]() - thanks [@lamweili](https://github.com/lamweili)
+- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/70) - thanks [@lamweili](https://github.com/lamweili)
+  - chore(deps-dev): bump eslint from 8.15.0 to 8.16.0
+  - chore(deps-dev): bump eslint-plugin-mocha from 10.0.4 to 10.0.5
+  - chore(deps-dev): updated package-lock.json
 
-## [v1.1.2](https://github.com/ljharb/define-data-property/compare/v1.1.1...v1.1.2) - 2024-02-05
+## 4.0.10
 
-### Commits
+- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/66) - thanks [@lamweili](https://github.com/lamweili)
+  - chore(deps-dev): bump eslint from 8.14.0 to 8.15.0
+  - chore(deps-dev): bump mocha from 9.2.2 to 10.0.0
+  - chore(deps-dev): updated package-lock.json
 
-- [Dev Deps] update @types packages, `object-inspect`, `tape`, `typescript` [`df41bf8`](https://github.com/ljharb/define-data-property/commit/df41bf84ca3456be6226055caab44e38e3a7fd2f)
-- [Dev Deps] update DT packages, `aud`, `npmignore`, `tape`, typescript` [`fab0e4e`](https://github.com/ljharb/define-data-property/commit/fab0e4ec709ee02b79f42d6db3ee5f26e0a34b8a)
-- [Dev Deps] use `hasown` instead of `has` [`aa51ef9`](https://github.com/ljharb/define-data-property/commit/aa51ef93f6403d49d9bb72a807bcdb6e418978c0)
-- [Refactor] use `es-errors`, so things that only need those do not need `get-intrinsic` [`d89be50`](https://github.com/ljharb/define-data-property/commit/d89be50571175888d391238605122679f7e65ffc)
-- [Deps] update `has-property-descriptors` [`7af887c`](https://github.com/ljharb/define-data-property/commit/7af887c9083b59b195b0079e04815cfed9fcee2b)
-- [Deps] update `get-intrinsic` [`bb8728e`](https://github.com/ljharb/define-data-property/commit/bb8728ec42cd998505a7157ae24853a560c20646)
+## 4.0.9
 
-## [v1.1.1](https://github.com/ljharb/define-data-property/compare/v1.1.0...v1.1.1) - 2023-10-12
+- build: is exactly the same as 4.0.8 and is a re-published 4.0.8 to npm
 
-### Commits
+## 4.0.8
 
-- [Tests] fix tests in ES3 engines [`5c6920e`](https://github.com/ljharb/define-data-property/commit/5c6920edd1f52f675b02f417e539c28135b43f94)
-- [Dev Deps] update `@types/es-value-fixtures`, `@types/for-each`, `@types/gopd`, `@types/has-property-descriptors`, `tape`, `typescript` [`7d82dfc`](https://github.com/ljharb/define-data-property/commit/7d82dfc20f778b4465bba06335dd53f6f431aea3)
-- [Fix] IE 8 has a broken `Object.defineProperty` [`0672e1a`](https://github.com/ljharb/define-data-property/commit/0672e1af2a9fcc787e7c23b96dea60d290df5548)
-- [meta] emit types on prepack [`73acb1f`](https://github.com/ljharb/define-data-property/commit/73acb1f903c21b314ec7156bf10f73c7910530c0)
-- [Dev Deps] update `tape`, `typescript` [`9489a77`](https://github.com/ljharb/define-data-property/commit/9489a7738bf2ecf0ac71d5b78ec4ca6ad7ba0142)
+- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/60) - thanks [@lamweili](https://github.com/lamweili)
+  - chore(deps-dev): bump eslint from 8.13.0 to 8.14.0
+  - chore(deps-dev): updated package-lock.json
+- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/59) - thanks [@lamweili](https://github.com/lamweili)
+  - chore(deps-dev): updated package-lock.json
 
-## [v1.1.0](https://github.com/ljharb/define-data-property/compare/v1.0.1...v1.1.0) - 2023-09-13
+## 4.0.7
 
-### Commits
+- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/57) - thanks [@lamweili](https://github.com/lamweili)
+  - chore(deps-dev): bump eslint-plugin-mocha from 10.0.3 to 10.0.4
+  - chore(deps-dev): updated package-lock.json
+- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/54) - thanks [@lamweili](https://github.com/lamweili)
+  - chore(deps-dev): bump eslint from 8.11.0 to 8.13.0
+  - chore(deps-dev): updated package-lock.json
 
-- [New] add `loose` arg [`155235a`](https://github.com/ljharb/define-data-property/commit/155235a4c4d7741f6de01cd87c99599a56654b72)
-- [New] allow `null` to be passed for the non* args [`7d2fa5f`](https://github.com/ljharb/define-data-property/commit/7d2fa5f06be0392736c13b126f7cd38979f34792)
+## 4.0.6
 
-## [v1.0.1](https://github.com/ljharb/define-data-property/compare/v1.0.0...v1.0.1) - 2023-09-12
+- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/52) - thanks [@lamweili](https://github.com/lamweili)
+  - chore(deps-dev): updated package-lock.json
 
-### Commits
+## 4.0.5
 
-- [meta] add TS types [`43d763c`](https://github.com/ljharb/define-data-property/commit/43d763c6c883f652de1c9c02ef6216ee507ffa69)
-- [Dev Deps] update `@types/tape`, `typescript` [`f444985`](https://github.com/ljharb/define-data-property/commit/f444985811c36f3e6448a03ad2f9b7898917f4c7)
-- [meta] add `safe-publish-latest`, [`172bb10`](https://github.com/ljharb/define-data-property/commit/172bb10890896ebb160e64398f6ee55760107bee)
+- [test: better test coverage instead of ignoring](https://github.com/nomiddlename/date-format/pull/48) - thanks [@lamweili](https://github.com/lamweili)
+- [docs: updated README.md with badges](https://github.com/nomiddlename/date-format/pull/50) thanks [@lamweili](https://github.com/lamweili)
+- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/49) - thanks [@lamweili](https://github.com/lamweili)
+  - chore(deps-dev): bump eslint from 8.10.0 to 8.11.0
+  - chore(deps-dev): bump mocha from 9.2.1 to 9.2.2
+  - chore(deps-dev): updated package-lock.json
 
-## v1.0.0 - 2023-09-12
+## 4.0.4
 
-### Commits
+- chore(deps-dev): updated dependencies - thanks [@lamweili](https://github.com/lamweili)
+  - [chore(deps-dev): bump eslint from 8.8.0 to 8.10.0 and mocha from 9.2.0 to 9.2.1](https://github.com/nomiddlename/date-format/pull/46) 
+  - [chore(deps-dev): bump eslint from 8.7.0 to 8.8.0 and mocha from 9.1.4 to 9.2.0](https://github.com/nomiddlename/date-format/pull/45) 
+  - [chore(deps-dev): updated package-lock.json](https://github.com/nomiddlename/date-format/pull/44) 
 
-- Initial implementation, tests, readme [`5b43d6b`](https://github.com/ljharb/define-data-property/commit/5b43d6b44e675a904810467a7d4e0adb7efc3196)
-- Initial commit [`35e577a`](https://github.com/ljharb/define-data-property/commit/35e577a6ba59a98befa97776d70d90f3bea9009d)
-- npm init [`82a0a04`](https://github.com/ljharb/define-data-property/commit/82a0a04a321ca7de220af02d41e2745e8a9962ed)
-- Only apps should have lockfiles [`96df244`](https://github.com/ljharb/define-data-property/commit/96df244a3c6f426f9a2437be825d1c6f5dd7158e)
-- [meta] use `npmignore` to autogenerate an npmignore file [`a87ff18`](https://github.com/ljharb/define-data-property/commit/a87ff18cb79e14c2eb5720486c4759fd9a189375)
+## 4.0.3
+
+- [test: 100% test coverage](https://github.com/nomiddlename/date-format/pull/42) - thanks [@lamweili](https://github.com/lamweili)
+- chore(deps-dev): updated dependencies - thanks [@lamweili](https://github.com/lamweili)
+  - [chore(deps-dev): bump eslint from 8.6.0 to 8.7.0 and mocha from 9.1.3 to 9.1.4](https://github.com/nomiddlename/date-format/pull/41) 
+
+## 4.0.2
+
+- [build: not to publish misc files to NPM](https://github.com/nomiddlename/date-format/pull/39) - thanks [@lamweili](https://github.com/lamweili)
+- docs: CHANGELOG.md
+  - [docs: removed "log4js" from title of CHANGELOG.md](https://github.com/nomiddlename/date-format/pull/37) - thanks [@joshuabremerdexcom](https://github.com/joshuabremerdexcom)
+  - [docs: added "date-format" to title of CHANGELOG.md](https://github.com/nomiddlename/date-format/commit/64a95d0386853692d7d65174f94a0751e775f7ce#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed) - thanks [@lamweili](https://github.com/lamweili)
+- chore(deps-dev): updated dependencies - thanks [@lamweili](https://github.com/lamweili)
+  - [chore(deps-dev): bump eslint-plugin-mocha from 5.3.0 to 10.0.3](https://github.com/nomiddlename/date-format/pull/38) 
+
+## 4.0.1
+
+- build: is exactly the same as 4.0.0 and is a re-published 4.0.0 to npm
+
+## 4.0.0
+
+- [fix: timezone format to include colon separator](https://github.com/nomiddlename/date-format/pull/27) - thanks [@lamweili](https://github.com/lamweili)
+  - [test: have a test case for timezone with colon](https://github.com/nomiddlename/date-format/pull/32) - thanks [@lamweili](https://github.com/lamweili)
+- [docs: updated README.md with more examples and expected output](https://github.com/nomiddlename/date-format/pull/33) - thanks [@lamweili](https://github.com/lamweili)
+- chore(deps-dev): updated dependencies
+  - [chore(deps-dev): bump should-util from 1.0.0 to 1.0.1](https://github.com/nomiddlename/date-format/pull/31) - thanks [@lamweili](https://github.com/lamweili)
+  - [chore(deps-dev): bump eslint from 5.16.0 to 8.6.0 and mocha from 5.2.0 to 9.1.3](https://github.com/nomiddlename/date-format/pull/30) - thanks [@lamweili](https://github.com/lamweili)
+  - [chore(deps-dev): bump acorn from 6.2.0 to 6.4.2](https://github.com/nomiddlename/date-format/pull/29) - thanks [@Dependabot](https://github.com/dependabot)
+  - [chore(deps-dev): bump lodash from 4.17.14 to 4.17.21](https://github.com/nomiddlename/date-format/pull/26) - thanks [@Dependabot](https://github.com/dependabot)
+
+## Previous versions
+
+Change information for older versions can be found by looking at the milestones in github.

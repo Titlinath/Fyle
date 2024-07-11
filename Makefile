@@ -17,8 +17,8 @@ test:
 		--browser-name $(BROWSER_NAME) \
 		--browser-version $(BROWSER_VERSION) \
 		test/*.js; \
-	else \
-		$(ZUUL) \
+		else \
+	$(ZUUL) \
 		--ui mocha-bdd \
 		--browser-name $(BROWSER_NAME) \
 		--browser-version $(BROWSER_VERSION) \
