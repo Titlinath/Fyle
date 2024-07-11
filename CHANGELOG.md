@@ -1,116 +1,166 @@
-# date-format Changelog
+# Changes
 
-## 4.0.14
 
-- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/86) - thanks [@lamweili](https://github.com/lamweili)
-  - chore(deps-dev): bump eslint from 4.19.1 to 8.24.0
-  - chore(deps-dev): bump eslint-plugin-mocha from 4.12.1 to 10.1.0
-  - chore(deps-dev): bump mocha from 5.2.0 to 10.0.0
-  - chore(deps-dev): bump nyc from 13.0.0 to 15.1.0
-- [ci: manually downgrade dev dependencies for older versions](https://github.com/nomiddlename/date-format/pull/87) - thanks [@lamweili](https://github.com/lamweili)
-- [ci: separated npm audit](https://github.com/nomiddlename/date-format/pull/85) - thanks [@lamweili](https://github.com/lamweili)
-- [ci: updated codeql from v1 to v2](https://github.com/nomiddlename/date-format/pull/80) - thanks [@lamweili](https://github.com/lamweili)
+## 2.0.2
 
-## 4.0.13
+* Rename bin to `node-which`
 
-- [ci: added tests for Node.js 4.x, 6.x, 8.x, 10.x, 18.x](https://github.com/nomiddlename/date-format/pull/75) - thanks [@lamweili](https://github.com/lamweili)
-  - [chore(deps-dev): bump hosted-git-info from 2.6.0 to 2.8.9](https://github.com/nomiddlename/date-format/pull/76) - thanks [@Dependabot](https://github.com/dependabot)
-  - [chore(deps-dev): bump handlebars from 4.0.11 to 4.7.7 ](https://github.com/nomiddlename/date-format/pull/77) - thanks [@Dependabot](https://github.com/dependabot)
-  - [chore(deps-dev): bump y18n from 3.2.1 to 3.2.2](https://github.com/nomiddlename/date-format/pull/78) - thanks [@Dependabot](https://github.com/dependabot)
+## 2.0.1
 
-## 4.0.12
+* generate changelog and publish on version bump
+* enforce 100% test coverage
+* Promise interface
 
-- [ci: added tests for Node.js 8.x, 10.x, 18.x](https://github.com/nomiddlename/date-format/pull/73) - thanks [@lamweili](https://github.com/lamweili)
-- [docs: renamed peteriman to lamweili](https://github.com/nomiddlename/date-format/pull/72) - thanks [@lamweili](https://github.com/lamweili)
+## 2.0.0
 
-## 4.0.11
+* Parallel tests, modern JavaScript, and drop support for node < 8
 
-- [fix: date parsing errors (wrong month due to days overflow)](https://github.com/nomiddlename/date-format/pull/68) - thanks [@lamweili](https://github.com/lamweili)
-  - [test: use new Date(0) instead of new Date() before setting every field]() - thanks [@lamweili](https://github.com/lamweili)
-- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/70) - thanks [@lamweili](https://github.com/lamweili)
-  - chore(deps-dev): bump eslint from 8.15.0 to 8.16.0
-  - chore(deps-dev): bump eslint-plugin-mocha from 10.0.4 to 10.0.5
-  - chore(deps-dev): updated package-lock.json
+## 1.3.1
 
-## 4.0.10
+* update deps
+* update travis
 
-- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/66) - thanks [@lamweili](https://github.com/lamweili)
-  - chore(deps-dev): bump eslint from 8.14.0 to 8.15.0
-  - chore(deps-dev): bump mocha from 9.2.2 to 10.0.0
-  - chore(deps-dev): updated package-lock.json
+## v1.3.0
 
-## 4.0.9
+* Add nothrow option to which.sync
+* update tap
 
-- build: is exactly the same as 4.0.8 and is a re-published 4.0.8 to npm
+## v1.2.14
 
-## 4.0.8
+* appveyor: drop node 5 and 0.x
+* travis-ci: add node 6, drop 0.x
 
-- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/60) - thanks [@lamweili](https://github.com/lamweili)
-  - chore(deps-dev): bump eslint from 8.13.0 to 8.14.0
-  - chore(deps-dev): updated package-lock.json
-- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/59) - thanks [@lamweili](https://github.com/lamweili)
-  - chore(deps-dev): updated package-lock.json
+## v1.2.13
 
-## 4.0.7
+* test: Pass missing option to pass on windows
+* update tap
+* update isexe to 2.0.0
+* neveragain.tech pledge request
 
-- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/57) - thanks [@lamweili](https://github.com/lamweili)
-  - chore(deps-dev): bump eslint-plugin-mocha from 10.0.3 to 10.0.4
-  - chore(deps-dev): updated package-lock.json
-- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/54) - thanks [@lamweili](https://github.com/lamweili)
-  - chore(deps-dev): bump eslint from 8.11.0 to 8.13.0
-  - chore(deps-dev): updated package-lock.json
+## v1.2.12
 
-## 4.0.6
+* Removed unused require
 
-- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/52) - thanks [@lamweili](https://github.com/lamweili)
-  - chore(deps-dev): updated package-lock.json
+## v1.2.11
 
-## 4.0.5
+* Prevent changelog script from being included in package
 
-- [test: better test coverage instead of ignoring](https://github.com/nomiddlename/date-format/pull/48) - thanks [@lamweili](https://github.com/lamweili)
-- [docs: updated README.md with badges](https://github.com/nomiddlename/date-format/pull/50) thanks [@lamweili](https://github.com/lamweili)
-- [chore(deps-dev): updated dependencies](https://github.com/nomiddlename/date-format/pull/49) - thanks [@lamweili](https://github.com/lamweili)
-  - chore(deps-dev): bump eslint from 8.10.0 to 8.11.0
-  - chore(deps-dev): bump mocha from 9.2.1 to 9.2.2
-  - chore(deps-dev): updated package-lock.json
+## v1.2.10
 
-## 4.0.4
+* Use env.PATH only, not env.Path
 
-- chore(deps-dev): updated dependencies - thanks [@lamweili](https://github.com/lamweili)
-  - [chore(deps-dev): bump eslint from 8.8.0 to 8.10.0 and mocha from 9.2.0 to 9.2.1](https://github.com/nomiddlename/date-format/pull/46) 
-  - [chore(deps-dev): bump eslint from 8.7.0 to 8.8.0 and mocha from 9.1.4 to 9.2.0](https://github.com/nomiddlename/date-format/pull/45) 
-  - [chore(deps-dev): updated package-lock.json](https://github.com/nomiddlename/date-format/pull/44) 
+## v1.2.9
 
-## 4.0.3
+* fix for paths starting with ../
+* Remove unused `is-absolute` module
 
-- [test: 100% test coverage](https://github.com/nomiddlename/date-format/pull/42) - thanks [@lamweili](https://github.com/lamweili)
-- chore(deps-dev): updated dependencies - thanks [@lamweili](https://github.com/lamweili)
-  - [chore(deps-dev): bump eslint from 8.6.0 to 8.7.0 and mocha from 9.1.3 to 9.1.4](https://github.com/nomiddlename/date-format/pull/41) 
+## v1.2.8
 
-## 4.0.2
+* bullet items in changelog that contain (but don't start with) #
 
-- [build: not to publish misc files to NPM](https://github.com/nomiddlename/date-format/pull/39) - thanks [@lamweili](https://github.com/lamweili)
-- docs: CHANGELOG.md
-  - [docs: removed "log4js" from title of CHANGELOG.md](https://github.com/nomiddlename/date-format/pull/37) - thanks [@joshuabremerdexcom](https://github.com/joshuabremerdexcom)
-  - [docs: added "date-format" to title of CHANGELOG.md](https://github.com/nomiddlename/date-format/commit/64a95d0386853692d7d65174f94a0751e775f7ce#diff-06572a96a58dc510037d5efa622f9bec8519bc1beab13c9f251e97e657a9d4ed) - thanks [@lamweili](https://github.com/lamweili)
-- chore(deps-dev): updated dependencies - thanks [@lamweili](https://github.com/lamweili)
-  - [chore(deps-dev): bump eslint-plugin-mocha from 5.3.0 to 10.0.3](https://github.com/nomiddlename/date-format/pull/38) 
+## v1.2.7
 
-## 4.0.1
+* strip 'update changelog' changelog entries out of changelog
 
-- build: is exactly the same as 4.0.0 and is a re-published 4.0.0 to npm
+## v1.2.6
 
-## 4.0.0
+* make the changelog bulleted
 
-- [fix: timezone format to include colon separator](https://github.com/nomiddlename/date-format/pull/27) - thanks [@lamweili](https://github.com/lamweili)
-  - [test: have a test case for timezone with colon](https://github.com/nomiddlename/date-format/pull/32) - thanks [@lamweili](https://github.com/lamweili)
-- [docs: updated README.md with more examples and expected output](https://github.com/nomiddlename/date-format/pull/33) - thanks [@lamweili](https://github.com/lamweili)
-- chore(deps-dev): updated dependencies
-  - [chore(deps-dev): bump should-util from 1.0.0 to 1.0.1](https://github.com/nomiddlename/date-format/pull/31) - thanks [@lamweili](https://github.com/lamweili)
-  - [chore(deps-dev): bump eslint from 5.16.0 to 8.6.0 and mocha from 5.2.0 to 9.1.3](https://github.com/nomiddlename/date-format/pull/30) - thanks [@lamweili](https://github.com/lamweili)
-  - [chore(deps-dev): bump acorn from 6.2.0 to 6.4.2](https://github.com/nomiddlename/date-format/pull/29) - thanks [@Dependabot](https://github.com/dependabot)
-  - [chore(deps-dev): bump lodash from 4.17.14 to 4.17.21](https://github.com/nomiddlename/date-format/pull/26) - thanks [@Dependabot](https://github.com/dependabot)
+## v1.2.5
 
-## Previous versions
+* make a changelog, and keep it up to date
+* don't include tests in package
+* Properly handle relative-path executables
+* appveyor
+* Attach error code to Not Found error
+* Make tests pass on Windows
 
-Change information for older versions can be found by looking at the milestones in github.
+## v1.2.4
+
+* Fix typo
+
+## v1.2.3
+
+* update isexe, fix regression in pathExt handling
+
+## v1.2.2
+
+* update deps, use isexe module, test windows
+
+## v1.2.1
+
+* Sometimes windows PATH entries are quoted
+* Fixed a bug in the check for group and user mode bits. This bug was introduced during refactoring for supporting strict mode.
+* doc cli
+
+## v1.2.0
+
+* Add support for opt.all and -as cli flags
+* test the bin
+* update travis
+* Allow checking for multiple programs in bin/which
+* tap 2
+
+## v1.1.2
+
+* travis
+* Refactored and fixed undefined error on Windows
+* Support strict mode
+
+## v1.1.1
+
+* test +g exes against secondary groups, if available
+* Use windows exe semantics on cygwin & msys
+* cwd should be first in path on win32, not last
+* Handle lower-case 'env.Path' on Windows
+* Update docs
+* use single-quotes
+
+## v1.1.0
+
+* Add tests, depend on is-absolute
+
+## v1.0.9
+
+* which.js: root is allowed to execute files owned by anyone
+
+## v1.0.8
+
+* don't use graceful-fs
+
+## v1.0.7
+
+* add license to package.json
+
+## v1.0.6
+
+* isc license
+
+## 1.0.5
+
+* Awful typo
+
+## 1.0.4
+
+* Test for path absoluteness properly
+* win: Allow '' as a pathext if cmd has a . in it
+
+## 1.0.3
+
+* Remove references to execPath
+* Make `which.sync()` work on Windows by honoring the PATHEXT variable.
+* Make `isExe()` always return true on Windows.
+* MIT
+
+## 1.0.2
+
+* Only files can be exes
+
+## 1.0.1
+
+* Respect the PATHEXT env for win32 support
+* should 0755 the bin
+* binary
+* guts
+* package
+* 1st
