@@ -1,20 +1,15 @@
-type AnymatchFn = (testString: string) => boolean;
-type AnymatchPattern = string|RegExp|AnymatchFn;
-type AnymatchMatcher = AnymatchPattern|AnymatchPattern[]
-type AnymatchTester = {
-  (testString: string|any[], returnIndex: true): number;
-  (testString: string|any[]): boolean;
+import { FormatMode, FormatName } from "./formats";
+import type { Plugin, Format } from "ajv";
+export { FormatMode, FormatName } from "./formats";
+export { LimitFormatError } from "./limit";
+export interface FormatOptions {
+    mode?: FormatMode;
+    formats?: FormatName[];
+    keywords?: boolean;
 }
-
-type PicomatchOptions = {dot: boolean};
-
-declare const anymatch: {
-  (matchers: AnymatchMatcher): AnymatchTester;
-  (matchers: AnymatchMatcher, testString: null, returnIndex: true | PicomatchOptions): AnymatchTester;
-  (matchers: AnymatchMatcher, testString: string|any[], returnIndex: true | PicomatchOptions): number;
-  (matchers: AnymatchMatcher, testString: string|any[]): boolean;
+export type FormatsPluginOptions = FormatName[] | FormatOptions;
+export interface FormatsPlugin extends Plugin<FormatsPluginOptions> {
+    get: (format: FormatName, mode?: FormatMode) => Format;
 }
-
-export {AnymatchMatcher as Matcher}
-export {AnymatchTester as Tester}
-export default anymatch
+declare const formatsPlugin: FormatsPlugin;
+export default formatsPlugin;
