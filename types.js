@@ -1,13 +1,2 @@
-'use strict';
-
-module.exports = [
-  'bmp',
-  'gif',
-  'jpg',
-  'png',
-  'psd',
-  'svg',
-  'tiff',
-  'webp',
-  'dds'
-];
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
