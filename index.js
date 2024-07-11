@@ -1,23 +1,10 @@
-"use strict";
-
-// Update this array if you add/rename/remove files in this directory.
-// We support Browserify by skipping automatic module discovery and requiring modules directly.
-var modules = [
-    require("./internal"),
-    require("./utf32"),
-    require("./utf16"),
-    require("./utf7"),
-    require("./sbcs-codec"),
-    require("./sbcs-data"),
-    require("./sbcs-data-generated"),
-    require("./dbcs-codec"),
-    require("./dbcs-data"),
-];
-
-// Put all encoding/alias/codec definitions to single object and export it.
-for (var i = 0; i < modules.length; i++) {
-    var module = modules[i];
-    for (var enc in module)
-        if (Object.prototype.hasOwnProperty.call(module, enc))
-            exports[enc] = module[enc];
-}
+export * from "./stringify.js";
+export * from "./traversal.js";
+export * from "./manipulation.js";
+export * from "./querying.js";
+export * from "./legacy.js";
+export * from "./helpers.js";
+export * from "./feeds.js";
+/** @deprecated Use these methods from `domhandler` directly. */
+export { isTag, isCDATA, isText, isComment, isDocument, hasChildren, } from "domhandler";
+//# sourceMappingURL=index.js.map
