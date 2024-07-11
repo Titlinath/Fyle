@@ -1,139 +1,362 @@
-### 0.11.4 / 2021-05-24
 
-- Prevent the client hanging if `close()` is called when already closing
+2.6.9 / 2017-09-22
+==================
 
-### 0.11.3 / 2019-06-10
+  * remove ReDoS regexp in %o formatter (#504)
 
-- Fix a race condition that caused a timeout not to be cancelled immediately
-  when the WebSocket is closed
-- Change license from MIT to Apache 2.0
+2.6.8 / 2017-05-18
+==================
 
-### 0.11.2 / 2019-06-10
+  * Fix: Check for undefined on browser globals (#462, @marbemac)
 
-(This version was pulled due to an error when publishing)
+2.6.7 / 2017-05-16
+==================
 
-### 0.11.1 / 2017-01-22
+  * Fix: Update ms to 2.0.0 to fix regular expression denial of service vulnerability (#458, @hubdotcom)
+  * Fix: Inline extend function in node implementation (#452, @dougwilson)
+  * Docs: Fix typo (#455, @msasad)
 
-- Forcibly close the I/O stream after a timeout if the peer does not respond
-  after calling `close()`
+2.6.5 / 2017-04-27
+==================
+  
+  * Fix: null reference check on window.documentElement.style.WebkitAppearance (#447, @thebigredgeek)
+  * Misc: clean up browser reference checks (#447, @thebigredgeek)
+  * Misc: add npm-debug.log to .gitignore (@thebigredgeek)
 
-### 0.11.0 / 2016-02-24
 
-- Introduce a `net` option to the `Client` class for setting things like, say,
-  `servername`
+2.6.4 / 2017-04-20
+==================
 
-### 0.10.0 / 2015-07-08
+  * Fix: bug that would occure if process.env.DEBUG is a non-string value. (#444, @LucianBuzzo)
+  * Chore: ignore bower.json in npm installations. (#437, @joaovieira)
+  * Misc: update "ms" to v0.7.3 (@tootallnate)
 
-- Add the standard `code` and `reason` parameters to the `close` method
+2.6.3 / 2017-03-13
+==================
 
-### 0.9.4 / 2015-03-08
+  * Fix: Electron reference to `process.env.DEBUG` (#431, @paulcbetts)
+  * Docs: Changelog fix (@thebigredgeek)
 
-- Don't send input to the driver before `start()` is called
+2.6.2 / 2017-03-10
+==================
 
-### 0.9.3 / 2015-02-19
+  * Fix: DEBUG_MAX_ARRAY_LENGTH (#420, @slavaGanzin)
+  * Docs: Add backers and sponsors from Open Collective (#422, @piamancini)
+  * Docs: Add Slackin invite badge (@tootallnate)
 
-- Make sure the TCP socket is not left open when closing the connection
+2.6.1 / 2017-02-10
+==================
 
-### 0.9.2 / 2014-12-21
+  * Fix: Module's `export default` syntax fix for IE8 `Expected identifier` error
+  * Fix: Whitelist DEBUG_FD for values 1 and 2 only (#415, @pi0)
+  * Fix: IE8 "Expected identifier" error (#414, @vgoma)
+  * Fix: Namespaces would not disable once enabled (#409, @musikov)
 
-- Only emit `error` once, and don't emit it after `close`
+2.6.0 / 2016-12-28
+==================
 
-### 0.9.1 / 2014-12-18
+  * Fix: added better null pointer checks for browser useColors (@thebigredgeek)
+  * Improvement: removed explicit `window.debug` export (#404, @tootallnate)
+  * Improvement: deprecated `DEBUG_FD` environment variable (#405, @tootallnate)
 
-- Check that all options to the WebSocket constructor are recognized
+2.5.2 / 2016-12-25
+==================
 
-### 0.9.0 / 2014-12-13
+  * Fix: reference error on window within webworkers (#393, @KlausTrainer)
+  * Docs: fixed README typo (#391, @lurch)
+  * Docs: added notice about v3 api discussion (@thebigredgeek)
 
-- Allow protocol extensions to be passed into websocket-extensions
+2.5.1 / 2016-12-20
+==================
 
-### 0.8.1 / 2014-11-12
+  * Fix: babel-core compatibility
 
-- Send the correct hostname when upgrading a connection to TLS
+2.5.0 / 2016-12-20
+==================
 
-### 0.8.0 / 2014-11-08
+  * Fix: wrong reference in bower file (@thebigredgeek)
+  * Fix: webworker compatibility (@thebigredgeek)
+  * Fix: output formatting issue (#388, @kribblo)
+  * Fix: babel-loader compatibility (#383, @escwald)
+  * Misc: removed built asset from repo and publications (@thebigredgeek)
+  * Misc: moved source files to /src (#378, @yamikuronue)
+  * Test: added karma integration and replaced babel with browserify for browser tests (#378, @yamikuronue)
+  * Test: coveralls integration (#378, @yamikuronue)
+  * Docs: simplified language in the opening paragraph (#373, @yamikuronue)
 
-- Support connections via HTTP proxies
-- Close the connection cleanly if we're still waiting for a handshake response
+2.4.5 / 2016-12-17
+==================
 
-### 0.7.3 / 2014-10-04
+  * Fix: `navigator` undefined in Rhino (#376, @jochenberger)
+  * Fix: custom log function (#379, @hsiliev)
+  * Improvement: bit of cleanup + linting fixes (@thebigredgeek)
+  * Improvement: rm non-maintainted `dist/` dir (#375, @freewil)
+  * Docs: simplified language in the opening paragraph. (#373, @yamikuronue)
 
-- Allow sockets to be closed when they are in any state other than `CLOSED`
+2.4.4 / 2016-12-14
+==================
 
-### 0.7.2 / 2013-12-29
+  * Fix: work around debug being loaded in preload scripts for electron (#368, @paulcbetts)
 
-- Make sure the `close` event is emitted by clients on Node v0.10
+2.4.3 / 2016-12-14
+==================
 
-### 0.7.1 / 2013-12-03
+  * Fix: navigation.userAgent error for react native (#364, @escwald)
 
-- Support the `maxLength` websocket-driver option
-- Make the client emit `error` events on network errors
+2.4.2 / 2016-12-14
+==================
 
-### 0.7.0 / 2013-09-09
+  * Fix: browser colors (#367, @tootallnate)
+  * Misc: travis ci integration (@thebigredgeek)
+  * Misc: added linting and testing boilerplate with sanity check (@thebigredgeek)
 
-- Allow the server to send custom headers with EventSource responses
+2.4.1 / 2016-12-13
+==================
 
-### 0.6.1 / 2013-07-05
+  * Fix: typo that broke the package (#356)
 
-- Add `ca` option to the client for specifying certificate authorities
-- Start the server driver asynchronously so that `onopen` handlers can be added
+2.4.0 / 2016-12-13
+==================
 
-### 0.6.0 / 2013-05-12
+  * Fix: bower.json references unbuilt src entry point (#342, @justmatt)
+  * Fix: revert "handle regex special characters" (@tootallnate)
+  * Feature: configurable util.inspect()`options for NodeJS (#327, @tootallnate)
+  * Feature: %O`(big O) pretty-prints objects (#322, @tootallnate)
+  * Improvement: allow colors in workers (#335, @botverse)
+  * Improvement: use same color for same namespace. (#338, @lchenay)
 
-- Add support for custom headers
+2.3.3 / 2016-11-09
+==================
 
-### 0.5.0 / 2013-05-05
+  * Fix: Catch `JSON.stringify()` errors (#195, Jovan Alleyne)
+  * Fix: Returning `localStorage` saved values (#331, Levi Thomason)
+  * Improvement: Don't create an empty object when no `process` (Nathan Rajlich)
 
-- Extract the protocol handlers into the `websocket-driver` library
-- Support the Node streaming API
+2.3.2 / 2016-11-09
+==================
 
-### 0.4.4 / 2013-02-14
+  * Fix: be super-safe in index.js as well (@TooTallNate)
+  * Fix: should check whether process exists (Tom Newby)
 
-- Emit the `close` event if TCP is closed before CLOSE frame is acked
+2.3.1 / 2016-11-09
+==================
 
-### 0.4.3 / 2012-07-09
+  * Fix: Added electron compatibility (#324, @paulcbetts)
+  * Improvement: Added performance optimizations (@tootallnate)
+  * Readme: Corrected PowerShell environment variable example (#252, @gimre)
+  * Misc: Removed yarn lock file from source control (#321, @fengmk2)
 
-- Add `Connection: close` to EventSource response
-- Handle situations where `request.socket` is undefined
+2.3.0 / 2016-11-07
+==================
 
-### 0.4.2 / 2012-04-06
+  * Fix: Consistent placement of ms diff at end of output (#215, @gorangajic)
+  * Fix: Escaping of regex special characters in namespace strings (#250, @zacronos)
+  * Fix: Fixed bug causing crash on react-native (#282, @vkarpov15)
+  * Feature: Enabled ES6+ compatible import via default export (#212 @bucaran)
+  * Feature: Added %O formatter to reflect Chrome's console.log capability (#279, @oncletom)
+  * Package: Update "ms" to 0.7.2 (#315, @DevSide)
+  * Package: removed superfluous version property from bower.json (#207 @kkirsche)
+  * Readme: fix USE_COLORS to DEBUG_COLORS
+  * Readme: Doc fixes for format string sugar (#269, @mlucool)
+  * Readme: Updated docs for DEBUG_FD and DEBUG_COLORS environment variables (#232, @mattlyons0)
+  * Readme: doc fixes for PowerShell (#271 #243, @exoticknight @unreadable)
+  * Readme: better docs for browser support (#224, @matthewmueller)
+  * Tooling: Added yarn integration for development (#317, @thebigredgeek)
+  * Misc: Renamed History.md to CHANGELOG.md (@thebigredgeek)
+  * Misc: Added license file (#226 #274, @CantemoInternal @sdaitzman)
+  * Misc: Updated contributors (@thebigredgeek)
 
-- Add WebSocket error code `1011`.
-- Handle URLs with no path correctly by sending `GET /`
+2.2.0 / 2015-05-09
+==================
 
-### 0.4.1 / 2012-02-26
+  * package: update "ms" to v0.7.1 (#202, @dougwilson)
+  * README: add logging to file example (#193, @DanielOchoa)
+  * README: fixed a typo (#191, @amir-s)
+  * browser: expose `storage` (#190, @stephenmathieson)
+  * Makefile: add a `distclean` target (#189, @stephenmathieson)
 
-- Treat anything other than a `Buffer` as a string when calling `send()`
+2.1.3 / 2015-03-13
+==================
 
-### 0.4.0 / 2012-02-13
+  * Updated stdout/stderr example (#186)
+  * Updated example/stdout.js to match debug current behaviour
+  * Renamed example/stderr.js to stdout.js
+  * Update Readme.md (#184)
+  * replace high intensity foreground color for bold (#182, #183)
 
-- Add `ping()` method to server-side `WebSocket` and `EventSource`
-- Buffer `send()` calls until the draft-76 handshake is complete
-- Fix HTTPS problems on Node 0.7
+2.1.2 / 2015-03-01
+==================
 
-### 0.3.1 / 2012-01-16
+  * dist: recompile
+  * update "ms" to v0.7.0
+  * package: update "browserify" to v9.0.3
+  * component: fix "ms.js" repo location
+  * changed bower package name
+  * updated documentation about using debug in a browser
+  * fix: security error on safari (#167, #168, @yields)
 
-- Call `setNoDelay(true)` on `net.Socket` objects to reduce latency
+2.1.1 / 2014-12-29
+==================
 
-### 0.3.0 / 2012-01-13
+  * browser: use `typeof` to check for `console` existence
+  * browser: check for `console.log` truthiness (fix IE 8/9)
+  * browser: add support for Chrome apps
+  * Readme: added Windows usage remarks
+  * Add `bower.json` to properly support bower install
 
-- Add support for `EventSource` connections
+2.1.0 / 2014-10-15
+==================
 
-### 0.2.0 / 2011-12-21
+  * node: implement `DEBUG_FD` env variable support
+  * package: update "browserify" to v6.1.0
+  * package: add "license" field to package.json (#135, @panuhorsmalahti)
 
-- Add support for `Sec-WebSocket-Protocol` negotiation
-- Support `hixie-76` close frames and 75/76 ignored segments
-- Improve performance of HyBi parsing/framing functions
-- Decouple parsers from TCP and reduce write volume
+2.0.0 / 2014-09-01
+==================
 
-### 0.1.2 / 2011-12-05
+  * package: update "browserify" to v5.11.0
+  * node: use stderr rather than stdout for logging (#29, @stephenmathieson)
 
-- Detect closed sockets on the server side when TCP connection breaks
-- Make `hixie-76` sockets work through HAProxy
+1.0.4 / 2014-07-15
+==================
 
-### 0.1.1 / 2011-11-30
+  * dist: recompile
+  * example: remove `console.info()` log usage
+  * example: add "Content-Type" UTF-8 header to browser example
+  * browser: place %c marker after the space character
+  * browser: reset the "content" color via `color: inherit`
+  * browser: add colors support for Firefox >= v31
+  * debug: prefer an instance `log()` function over the global one (#119)
+  * Readme: update documentation about styled console logs for FF v31 (#116, @wryk)
 
-- Fix `addEventListener()` interface methods
+1.0.3 / 2014-07-09
+==================
 
-### 0.1.0 / 2011-11-27
+  * Add support for multiple wildcards in namespaces (#122, @seegno)
+  * browser: fix lint
 
-- Initial release, based on WebSocket components from Faye
+1.0.2 / 2014-06-10
+==================
+
+  * browser: update color palette (#113, @gscottolson)
+  * common: make console logging function configurable (#108, @timoxley)
+  * node: fix %o colors on old node <= 0.8.x
+  * Makefile: find node path using shell/which (#109, @timoxley)
+
+1.0.1 / 2014-06-06
+==================
+
+  * browser: use `removeItem()` to clear localStorage
+  * browser, node: don't set DEBUG if namespaces is undefined (#107, @leedm777)
+  * package: add "contributors" section
+  * node: fix comment typo
+  * README: list authors
+
+1.0.0 / 2014-06-04
+==================
+
+  * make ms diff be global, not be scope
+  * debug: ignore empty strings in enable()
+  * node: make DEBUG_COLORS able to disable coloring
+  * *: export the `colors` array
+  * npmignore: don't publish the `dist` dir
+  * Makefile: refactor to use browserify
+  * package: add "browserify" as a dev dependency
+  * Readme: add Web Inspector Colors section
+  * node: reset terminal color for the debug content
+  * node: map "%o" to `util.inspect()`
+  * browser: map "%j" to `JSON.stringify()`
+  * debug: add custom "formatters"
+  * debug: use "ms" module for humanizing the diff
+  * Readme: add "bash" syntax highlighting
+  * browser: add Firebug color support
+  * browser: add colors for WebKit browsers
+  * node: apply log to `console`
+  * rewrite: abstract common logic for Node & browsers
+  * add .jshintrc file
+
+0.8.1 / 2014-04-14
+==================
+
+  * package: re-add the "component" section
+
+0.8.0 / 2014-03-30
+==================
+
+  * add `enable()` method for nodejs. Closes #27
+  * change from stderr to stdout
+  * remove unnecessary index.js file
+
+0.7.4 / 2013-11-13
+==================
+
+  * remove "browserify" key from package.json (fixes something in browserify)
+
+0.7.3 / 2013-10-30
+==================
+
+  * fix: catch localStorage security error when cookies are blocked (Chrome)
+  * add debug(err) support. Closes #46
+  * add .browser prop to package.json. Closes #42
+
+0.7.2 / 2013-02-06
+==================
+
+  * fix package.json
+  * fix: Mobile Safari (private mode) is broken with debug
+  * fix: Use unicode to send escape character to shell instead of octal to work with strict mode javascript
+
+0.7.1 / 2013-02-05
+==================
+
+  * add repository URL to package.json
+  * add DEBUG_COLORED to force colored output
+  * add browserify support
+  * fix component. Closes #24
+
+0.7.0 / 2012-05-04
+==================
+
+  * Added .component to package.json
+  * Added debug.component.js build
+
+0.6.0 / 2012-03-16
+==================
+
+  * Added support for "-" prefix in DEBUG [Vinay Pulim]
+  * Added `.enabled` flag to the node version [TooTallNate]
+
+0.5.0 / 2012-02-02
+==================
+
+  * Added: humanize diffs. Closes #8
+  * Added `debug.disable()` to the CS variant
+  * Removed padding. Closes #10
+  * Fixed: persist client-side variant again. Closes #9
+
+0.4.0 / 2012-02-01
+==================
+
+  * Added browser variant support for older browsers [TooTallNate]
+  * Added `debug.enable('project:*')` to browser variant [TooTallNate]
+  * Added padding to diff (moved it to the right)
+
+0.3.0 / 2012-01-26
+==================
+
+  * Added millisecond diff when isatty, otherwise UTC string
+
+0.2.0 / 2012-01-22
+==================
+
+  * Added wildcard support
+
+0.1.0 / 2011-12-02
+==================
+
+  * Added: remove colors unless stderr isatty [TooTallNate]
+
+0.0.1 / 2010-01-03
+==================
+
+  * Initial release

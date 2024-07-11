@@ -1,8 +1,14 @@
+
 language: node_js
 node_js:
-  - "8"
-  - "10"
-  - "12"
-  - "13"
-after_script:
-  - coveralls < coverage/lcov.info
+  - "6"
+  - "5"
+  - "4"
+
+install:
+  - make node_modules
+
+script:
+  - make lint
+  - make test
+  - make coveralls
