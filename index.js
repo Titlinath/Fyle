@@ -1,62 +1,49 @@
-/* eslint-disable node/no-deprecated-api */
-var buffer = require('buffer')
-var Buffer = buffer.Buffer
+'use strict';
 
-// alternative to using Object.keys for old browsers
-function copyProps (src, dst) {
-  for (var key in src) {
-    dst[key] = src[key]
-  }
-}
-if (Buffer.from && Buffer.alloc && Buffer.allocUnsafe && Buffer.allocUnsafeSlow) {
-  module.exports = buffer
-} else {
-  // Copy properties from require('buffer')
-  copyProps(buffer, exports)
-  exports.Buffer = SafeBuffer
-}
+/**
+ * Module dependenices
+ */
 
-function SafeBuffer (arg, encodingOrOffset, length) {
-  return Buffer(arg, encodingOrOffset, length)
-}
+const clone = require('shallow-clone');
+const typeOf = require('kind-of');
+const isPlainObject = require('is-plain-object');
 
-// Copy static methods from Buffer
-copyProps(Buffer, SafeBuffer)
-
-SafeBuffer.from = function (arg, encodingOrOffset, length) {
-  if (typeof arg === 'number') {
-    throw new TypeError('Argument must not be a number')
-  }
-  return Buffer(arg, encodingOrOffset, length)
-}
-
-SafeBuffer.alloc = function (size, fill, encoding) {
-  if (typeof size !== 'number') {
-    throw new TypeError('Argument must be a number')
-  }
-  var buf = Buffer(size)
-  if (fill !== undefined) {
-    if (typeof encoding === 'string') {
-      buf.fill(fill, encoding)
-    } else {
-      buf.fill(fill)
+function cloneDeep(val, instanceClone) {
+  switch (typeOf(val)) {
+    case 'object':
+      return cloneObjectDeep(val, instanceClone);
+    case 'array':
+      return cloneArrayDeep(val, instanceClone);
+    default: {
+      return clone(val);
     }
-  } else {
-    buf.fill(0)
   }
-  return buf
 }
 
-SafeBuffer.allocUnsafe = function (size) {
-  if (typeof size !== 'number') {
-    throw new TypeError('Argument must be a number')
+function cloneObjectDeep(val, instanceClone) {
+  if (typeof instanceClone === 'function') {
+    return instanceClone(val);
   }
-  return Buffer(size)
+  if (instanceClone || isPlainObject(val)) {
+    const res = new val.constructor();
+    for (let key in val) {
+      res[key] = cloneDeep(val[key], instanceClone);
+    }
+    return res;
+  }
+  return val;
 }
 
-SafeBuffer.allocUnsafeSlow = function (size) {
-  if (typeof size !== 'number') {
-    throw new TypeError('Argument must be a number')
+function cloneArrayDeep(val, instanceClone) {
+  const res = new val.constructor(val.length);
+  for (let i = 0; i < val.length; i++) {
+    res[i] = cloneDeep(val[i], instanceClone);
   }
-  return buffer.SlowBuffer(size)
+  return res;
 }
+
+/**
+ * Expose `cloneDeep`
+ */
+
+module.exports = cloneDeep;
