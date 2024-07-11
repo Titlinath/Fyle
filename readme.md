@@ -1,50 +1,76 @@
-# string-width
+# clean-stack [![Build Status](https://travis-ci.org/sindresorhus/clean-stack.svg?branch=master)](https://travis-ci.org/sindresorhus/clean-stack)
 
-> Get the visual width of a string - the number of columns required to display it
+> Clean up error stack traces
 
-Some Unicode characters are [fullwidth](https://en.wikipedia.org/wiki/Halfwidth_and_fullwidth_forms) and use double the normal width. [ANSI escape codes](https://en.wikipedia.org/wiki/ANSI_escape_code) are stripped and doesn't affect the width.
+Removes the mostly unhelpful internal Node.js entries.
 
-Useful to be able to measure the actual width of command-line output.
+Also works in Electron.
 
 
 ## Install
 
 ```
-$ npm install string-width
+$ npm install clean-stack
 ```
 
 
 ## Usage
 
 ```js
-const stringWidth = require('string-width');
+const cleanStack = require('clean-stack');
 
-stringWidth('a');
-//=> 1
+const error = new Error('Missing unicorn');
 
-stringWidth('古');
-//=> 2
+console.log(error.stack);
+/*
+Error: Missing unicorn
+    at Object.<anonymous> (/Users/sindresorhus/dev/clean-stack/unicorn.js:2:15)
+    at Module._compile (module.js:409:26)
+    at Object.Module._extensions..js (module.js:416:10)
+    at Module.load (module.js:343:32)
+    at Function.Module._load (module.js:300:12)
+    at Function.Module.runMain (module.js:441:10)
+    at startup (node.js:139:18)
+*/
 
-stringWidth('\u001B[1m古\u001B[22m');
-//=> 2
+console.log(cleanStack(error.stack));
+/*
+Error: Missing unicorn
+    at Object.<anonymous> (/Users/sindresorhus/dev/clean-stack/unicorn.js:2:15)
+*/
 ```
+
+
+## API
+
+### cleanStack(stack, [options])
+
+#### stack
+
+Type: `string`
+
+The `stack` property of an `Error`.
+
+#### options
+
+Type: `Object`
+
+##### pretty
+
+Type: `boolean`<br>
+Default: `false`
+
+Prettify the file paths in the stack:
+
+`/Users/sindresorhus/dev/clean-stack/unicorn.js:2:15` → `~/dev/clean-stack/unicorn.js:2:15`
 
 
 ## Related
 
-- [string-width-cli](https://github.com/sindresorhus/string-width-cli) - CLI for this module
-- [string-length](https://github.com/sindresorhus/string-length) - Get the real length of a string
-- [widest-line](https://github.com/sindresorhus/widest-line) - Get the visual width of the widest line in a string
+- [extrack-stack](https://github.com/sindresorhus/extract-stack) - Extract the actual stack of an error
+- [stack-utils](https://github.com/tapjs/stack-utils) - Captures and cleans stack traces
 
 
----
+## License
 
-<div align="center">
-	<b>
-		<a href="https://tidelift.com/subscription/pkg/npm-string-width?utm_source=npm-string-width&utm_medium=referral&utm_campaign=readme">Get professional support for this package with a Tidelift subscription</a>
-	</b>
-	<br>
-	<sub>
-		Tidelift helps make open source sustainable for maintainers while giving companies<br>assurances about security, maintenance, and licensing for their dependencies.
-	</sub>
-</div>
+MIT © [Sindre Sorhus](https://sindresorhus.com)
