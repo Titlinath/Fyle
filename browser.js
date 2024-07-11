@@ -1,179 +1,185 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Browser = void 0;
-const dns_txt_1 = __importDefault(require("./dns-txt"));
-const dns_equal_1 = __importDefault(require("./utils/dns-equal"));
-const events_1 = require("events");
-const service_types_1 = require("./service-types");
-const filter_service_1 = __importDefault(require("./utils/filter-service"));
-const filter_txt_1 = __importDefault(require("./utils/filter-txt"));
-const equal_txt_1 = __importDefault(require("./utils/equal-txt"));
-const TLD = '.local';
-const WILDCARD = '_services._dns-sd._udp' + TLD;
-class Browser extends events_1.EventEmitter {
-    constructor(mdns, opts, onup) {
-        super();
-        this.onresponse = undefined;
-        this.serviceMap = {};
-        this.wildcard = false;
-        this._services = [];
-        if (typeof opts === 'function')
-            return new Browser(mdns, null, opts);
-        this.mdns = mdns;
-        this.txt = new dns_txt_1.default(opts !== null && opts.txt != null ? opts.txt : undefined);
-        if (opts === null || opts.type === undefined) {
-            this.name = WILDCARD;
-            this.wildcard = true;
-        }
-        else {
-            this.name = (0, service_types_1.toString)({ name: opts.type, protocol: opts.protocol || 'tcp' }) + TLD;
-            if (opts.name)
-                this.name = opts.name + '.' + this.name;
-            this.wildcard = false;
-        }
-        if (opts != null && opts.txt !== undefined)
-            this.txtQuery = (0, filter_txt_1.default)(opts.txt);
-        if (onup)
-            this.on('up', onup);
-        this.start();
-    }
-    start() {
-        if (this.onresponse || this.name === undefined)
-            return;
-        var self = this;
-        var nameMap = {};
-        if (!this.wildcard)
-            nameMap[this.name] = true;
-        this.onresponse = (packet, rinfo) => {
-            if (self.wildcard) {
-                packet.answers.forEach((answer) => {
-                    if (answer.type !== 'PTR' || answer.name !== self.name || answer.name in nameMap)
-                        return;
-                    nameMap[answer.data] = true;
-                    self.mdns.query(answer.data, 'PTR');
-                });
-            }
-            Object.keys(nameMap).forEach(function (name) {
-                self.goodbyes(name, packet).forEach(self.removeService.bind(self));
-                var matches = self.buildServicesFor(name, packet, self.txt, rinfo);
-                if (matches.length === 0)
-                    return;
-                matches.forEach((service) => {
-                    if (self.serviceMap[service.fqdn]) {
-                        self.updateService(service);
-                        return;
-                    }
-                    self.addService(service);
-                });
-            });
-        };
-        this.mdns.on('response', this.onresponse);
-        this.update();
-    }
-    stop() {
-        if (!this.onresponse)
-            return;
-        this.mdns.removeListener('response', this.onresponse);
-        this.onresponse = undefined;
-    }
-    update() {
-        this.mdns.query(this.name, 'PTR');
-    }
-    get services() {
-        return this._services;
-    }
-    addService(service) {
-        if ((0, filter_service_1.default)(service, this.txtQuery) === false)
-            return;
-        this._services.push(service);
-        this.serviceMap[service.fqdn] = true;
-        this.emit('up', service);
-    }
-    updateService(service) {
-        var _a;
-        if ((0, equal_txt_1.default)(service.txt, ((_a = this._services.find((s) => (0, dns_equal_1.default)(s.fqdn, service.fqdn))) === null || _a === void 0 ? void 0 : _a.txt) || {}))
-            return;
-        if (!(0, filter_service_1.default)(service, this.txtQuery)) {
-            this.removeService(service.fqdn);
-            return;
-        }
-        this._services = this._services.map(function (s) {
-            if (!(0, dns_equal_1.default)(s.fqdn, service.fqdn))
-                return s;
-            return service;
-        });
-        this.emit('txt-update', service);
-    }
-    removeService(fqdn) {
-        var service, index;
-        this._services.some(function (s, i) {
-            if ((0, dns_equal_1.default)(s.fqdn, fqdn)) {
-                service = s;
-                index = i;
-                return true;
-            }
-        });
-        if (!service || index === undefined)
-            return;
-        this._services.splice(index, 1);
-        delete this.serviceMap[fqdn];
-        this.emit('down', service);
-    }
-    goodbyes(name, packet) {
-        return packet.answers.concat(packet.additionals)
-            .filter((rr) => rr.type === 'PTR' && rr.ttl === 0 && (0, dns_equal_1.default)(rr.name, name))
-            .map((rr) => rr.data);
-    }
-    buildServicesFor(name, packet, txt, referer) {
-        var records = packet.answers.concat(packet.additionals).filter((rr) => rr.ttl > 0);
-        return records
-            .filter((rr) => rr.type === 'PTR' && (0, dns_equal_1.default)(rr.name, name))
-            .map((ptr) => {
-            const service = {
-                addresses: [],
-                subtypes: []
-            };
-            records.filter((rr) => {
-                return (rr.type === 'PTR' && (0, dns_equal_1.default)(rr.data, ptr.data) && rr.name.includes('._sub'));
-            }).forEach((rr) => {
-                const types = (0, service_types_1.toType)(rr.name);
-                service.subtypes.push(types.subtype);
-            });
-            records
-                .filter((rr) => {
-                return (rr.type === 'SRV' || rr.type === 'TXT') && (0, dns_equal_1.default)(rr.name, ptr.data);
-            })
-                .forEach((rr) => {
-                if (rr.type === 'SRV') {
-                    var parts = rr.name.split('.');
-                    var name = parts[0];
-                    var types = (0, service_types_1.toType)(parts.slice(1, -1).join('.'));
-                    service.name = name;
-                    service.fqdn = rr.name;
-                    service.host = rr.data.target;
-                    service.referer = referer;
-                    service.port = rr.data.port;
-                    service.type = types.name;
-                    service.protocol = types.protocol;
-                }
-                else if (rr.type === 'TXT') {
-                    service.rawTxt = rr.data;
-                    service.txt = this.txt.decodeAll(rr.data);
-                }
-            });
-            if (!service.name)
-                return;
-            records
-                .filter((rr) => (rr.type === 'A' || rr.type === 'AAAA') && (0, dns_equal_1.default)(rr.name, service.host))
-                .forEach((rr) => service.addresses.push(rr.data));
-            return service;
-        })
-            .filter((rr) => !!rr);
-    }
+/**
+ * This is the web browser implementation of `debug()`.
+ *
+ * Expose `debug()` as the module.
+ */
+
+exports = module.exports = require('./debug');
+exports.log = log;
+exports.formatArgs = formatArgs;
+exports.save = save;
+exports.load = load;
+exports.useColors = useColors;
+exports.storage = 'undefined' != typeof chrome
+               && 'undefined' != typeof chrome.storage
+                  ? chrome.storage.local
+                  : localstorage();
+
+/**
+ * Colors.
+ */
+
+exports.colors = [
+  'lightseagreen',
+  'forestgreen',
+  'goldenrod',
+  'dodgerblue',
+  'darkorchid',
+  'crimson'
+];
+
+/**
+ * Currently only WebKit-based Web Inspectors, Firefox >= v31,
+ * and the Firebug extension (any Firefox version) are known
+ * to support "%c" CSS customizations.
+ *
+ * TODO: add a `localStorage` variable to explicitly enable/disable colors
+ */
+
+function useColors() {
+  // NB: In an Electron preload script, document will be defined but not fully
+  // initialized. Since we know we're in Chrome, we'll just detect this case
+  // explicitly
+  if (typeof window !== 'undefined' && window.process && window.process.type === 'renderer') {
+    return true;
+  }
+
+  // is webkit? http://stackoverflow.com/a/16459606/376773
+  // document is undefined in react-native: https://github.com/facebook/react-native/pull/1632
+  return (typeof document !== 'undefined' && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance) ||
+    // is firebug? http://stackoverflow.com/a/398120/376773
+    (typeof window !== 'undefined' && window.console && (window.console.firebug || (window.console.exception && window.console.table))) ||
+    // is firefox >= v31?
+    // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
+    (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31) ||
+    // double check webkit in userAgent just in case we are in a worker
+    (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/));
 }
-exports.Browser = Browser;
-exports.default = Browser;
-//# sourceMappingURL=browser.js.map
+
+/**
+ * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
+ */
+
+exports.formatters.j = function(v) {
+  try {
+    return JSON.stringify(v);
+  } catch (err) {
+    return '[UnexpectedJSONParseError]: ' + err.message;
+  }
+};
+
+
+/**
+ * Colorize log arguments if enabled.
+ *
+ * @api public
+ */
+
+function formatArgs(args) {
+  var useColors = this.useColors;
+
+  args[0] = (useColors ? '%c' : '')
+    + this.namespace
+    + (useColors ? ' %c' : ' ')
+    + args[0]
+    + (useColors ? '%c ' : ' ')
+    + '+' + exports.humanize(this.diff);
+
+  if (!useColors) return;
+
+  var c = 'color: ' + this.color;
+  args.splice(1, 0, c, 'color: inherit')
+
+  // the final "%c" is somewhat tricky, because there could be other
+  // arguments passed either before or after the %c, so we need to
+  // figure out the correct index to insert the CSS into
+  var index = 0;
+  var lastC = 0;
+  args[0].replace(/%[a-zA-Z%]/g, function(match) {
+    if ('%%' === match) return;
+    index++;
+    if ('%c' === match) {
+      // we only are interested in the *last* %c
+      // (the user may have provided their own)
+      lastC = index;
+    }
+  });
+
+  args.splice(lastC, 0, c);
+}
+
+/**
+ * Invokes `console.log()` when available.
+ * No-op when `console.log` is not a "function".
+ *
+ * @api public
+ */
+
+function log() {
+  // this hackery is required for IE8/9, where
+  // the `console.log` function doesn't have 'apply'
+  return 'object' === typeof console
+    && console.log
+    && Function.prototype.apply.call(console.log, console, arguments);
+}
+
+/**
+ * Save `namespaces`.
+ *
+ * @param {String} namespaces
+ * @api private
+ */
+
+function save(namespaces) {
+  try {
+    if (null == namespaces) {
+      exports.storage.removeItem('debug');
+    } else {
+      exports.storage.debug = namespaces;
+    }
+  } catch(e) {}
+}
+
+/**
+ * Load `namespaces`.
+ *
+ * @return {String} returns the previously persisted debug modes
+ * @api private
+ */
+
+function load() {
+  var r;
+  try {
+    r = exports.storage.debug;
+  } catch(e) {}
+
+  // If debug isn't set in LS, and we're in Electron, try to load $DEBUG
+  if (!r && typeof process !== 'undefined' && 'env' in process) {
+    r = process.env.DEBUG;
+  }
+
+  return r;
+}
+
+/**
+ * Enable namespaces listed in `localStorage.debug` initially.
+ */
+
+exports.enable(load());
+
+/**
+ * Localstorage attempts to return the localstorage.
+ *
+ * This is necessary because safari throws
+ * when a user disables cookies/localstorage
+ * and you attempt to access it.
+ *
+ * @return {LocalStorage}
+ * @api private
+ */
+
+function localstorage() {
+  try {
+    return window.localStorage;
+  } catch (e) {}
+}

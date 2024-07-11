@@ -1,97 +1,93 @@
-3.1.2 / 2022-01-27
+0.6.1 / 2017-05-16
 ==================
 
-  * Fix return value for un-parsable strings
+  * fix `process.nextTick` detection in Node.js
 
-3.1.1 / 2021-11-15
+0.6.0 / 2017-03-25
 ==================
 
-  * Fix "thousandsSeparator" incorrecting formatting fractional part
+  * always invoke end callback asynchronously
+  * fix compatibility with component v1
+  * fix license field
 
-3.1.0 / 2019-01-22
+0.5.3 / 2015-10-01
 ==================
 
-  * Add petabyte (`pb`) support
+  * fix for browserify
 
-3.0.0 / 2017-08-31
+0.5.2 / 2014-12-22
 ==================
 
-  * Change "kB" to "KB" in format output
-  * Remove support for Node.js 0.6
-  * Remove support for ComponentJS
+  * add brower field
+  * add license to package.json
 
-2.5.0 / 2017-03-24
+0.5.1 / 2014-06-19
 ==================
 
-  * Add option "unit"
+ * add repository field to readme (exciting)
 
-2.4.0 / 2016-06-01
+0.5.0 / 2013-07-29
 ==================
 
-  * Add option "unitSeparator"
+ * add `.throws(true)` to opt-in to responding with an array of error objects
+ * make `new` optional
 
-2.3.0 / 2016-02-15
+0.4.0 / 2013-06-05
 ==================
 
-  * Drop partial bytes on all parsed units
-  * Fix non-finite numbers to `.format` to return `null`
-  * Fix parsing byte string that looks like hex
-  * perf: hoist regular expressions
+ * add catching of immediate callback errors
 
-2.2.0 / 2015-11-13
+0.3.2 / 2013-03-15
 ==================
 
-  * add option "decimalPlaces"
-  * add option "fixedDecimals"
+  * remove Emitter call in constructor
 
-2.1.0 / 2015-05-21
+0.3.1 / 2013-03-13
 ==================
 
-  * add `.format` export
-  * add `.parse` export
+  * add Emitter() mixin for client. Closes #8
 
-2.0.2 / 2015-05-20
+0.3.0 / 2013-03-13
 ==================
 
-  * remove map recreation
-  * remove unnecessary object construction
+  * add component.json
+  * add result example
+  * add .concurrency support
+  * add concurrency example
+  * add parallel example
 
-2.0.1 / 2015-05-07
+0.2.1 / 2012-11-08
 ==================
 
-  * fix browserify require
-  * remove node.extend dependency
+  * add .start, .end, and .duration properties
+  * change dependencies to devDependencies
 
-2.0.0 / 2015-04-12
+0.2.0 / 2012-10-04
 ==================
 
-  * add option "case"
-  * add option "thousandsSeparator"
-  * return "null" on invalid parse input
-  * support proper round-trip: bytes(bytes(num)) === num
-  * units no longer case sensitive when parsing
+  * add progress events. Closes #5 (__BREAKING CHANGE__)
 
-1.0.0 / 2014-05-05
+0.1.1 / 2012-07-03
 ==================
 
- * add negative support. fixes #6
+  * change "complete" event to "progress"
 
-0.3.0 / 2014-03-19
+0.1.0 / 2012-07-03
 ==================
 
- * added terabyte support
+  * add Emitter inheritance and emit "complete" [burcu]
 
-0.2.1 / 2013-04-01
+0.0.3 / 2012-06-02
 ==================
 
-  * add .component
+  * Callback results should be in the order of the queued functions.
 
-0.2.0 / 2012-10-28
+0.0.2 / 2012-02-12
 ==================
 
-  * bytes(200).should.eql('200b')
+  * any node
 
-0.1.0 / 2012-07-04
+0.0.1 / 2010-01-03
 ==================
 
-  * add bytes to string conversion [yields]
+  * Initial release

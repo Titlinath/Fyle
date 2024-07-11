@@ -1,202 +1,201 @@
-# bonjour-service
+# big.js
 
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/onlxltd/bonjour-service/publish-release.yml?style=flat-square) ![npm bundle size](https://img.shields.io/bundlephobia/min/bonjour-service?style=flat-square) ![GitHub Release Date](https://img.shields.io/github/release-date/onlxltd/bonjour-service?style=flat-square) ![npm](https://img.shields.io/npm/dw/bonjour-service?color=%23888&style=flat-square) ![GitHub](https://img.shields.io/github/license/onlxltd/bonjour-service?style=flat-square) [![DeepScan grade](https://deepscan.io/api/teams/13435/projects/16430/branches/352351/badge/grade.svg?style=flat-square)](https://deepscan.io/dashboard#view=project&tid=13435&pid=16430&bid=352351)
+**A small, fast JavaScript library for arbitrary-precision decimal arithmetic.**
 
-A Bonjour/Zeroconf protocol implementation in TypeScript. Publish
-services on the local network or discover existing services using
-multicast DNS.
+The little sister to [bignumber.js](https://github.com/MikeMcl/bignumber.js/) and [decimal.js](https://github.com/MikeMcl/decimal.js/). See [here](https://github.com/MikeMcl/big.js/wiki) for some notes on the difference between them.
 
-This is a rewrite of the project Bonjour (https://github.com/watson/bonjour) into modern TypeScript.
+## Features
 
-bonjour-service is supported by [ON LX Limited](https://onlx.ltd/?src=bonjour-service). Check out our projects such as [Ctrl Suite](https://onlx.ltd/ctrl-suite?src=bonjour-service) and [Ctrl for iPad](https://onlx.ltd/ctrl-for-ipad?src=bonjour-service).
+  - Faster, smaller and easier-to-use than JavaScript versions of Java's BigDecimal
+  - Only 5.9 KB minified and 2.7 KB gzipped
+  - Simple API
+  - Replicates the `toExponential`, `toFixed` and `toPrecision` methods of JavaScript's Number type
+  - Includes a `sqrt` method
+  - Stores values in an accessible decimal floating point format
+  - No dependencies
+  - Comprehensive [documentation](http://mikemcl.github.io/big.js/) and test set
 
+## Set up
 
+The library is the single JavaScript file *big.js* (or *big.min.js*, which is *big.js* minified).
 
-## Installation
-Add to your project dependencies using Yarn or NPM.
+Browser:
 
-#### Install with Yarn
-```
-yarn add bonjour-service
-```
-#### Install with NPM
-```
-npm install bonjour-service
-```
-
-## Usage
-
-```js
-import Bonjour from 'bonjour-service'
-
-const instance = new Bonjour()
-
-// advertise an HTTP server on port 3000
-instance.publish({ name: 'My Web Server', type: 'http', port: 3000 })
-
-// browse for all http services
-instance.find({ type: 'http' }, function (service) {
-  console.log('Found an HTTP server:', service)
-})
+```html
+<script src='path/to/big.js'></script>
 ```
 
-## API
+[Node.js](http://nodejs.org):
 
-### Initializing
-
-```js
-var instance = new Bonjour({ options }, errorCallback)
+```bash
+$ npm install big.js
 ```
 
-The `options` are optional and will be used when initializing the
-underlying multicast-dns server. For details see [the multicast-dns
-documentation](https://github.com/mafintosh/multicast-dns#mdns--multicastdnsoptions).
+```javascript
+const Big = require('big.js');
+```
 
-`errorCallback` is an optional callback used to gracefully handle errors that would otherwise
-crash the process. While not being strictly required, providing this is highly recommended
+ES6 module:
 
-### Publishing
+```javascript
+import Big from 'big.mjs';
+```
+## Use
 
-#### `var service = bonjour.publish(options)`
+*In all examples below, `var`, semicolons and `toString` calls are not shown. If a commented-out value is in quotes it means `toString` has been called on the preceding expression.*
 
-Publishes a new service.
+The library exports a single function, `Big`, the constructor of Big number instances.
+It accepts a value of type number, string or Big number object.
 
-Options are:
+    x = new Big(123.4567)
+    y = Big('123456.7e-3')             // 'new' is optional
+    z = new Big(x)
+    x.eq(y) && x.eq(z) && y.eq(z)      // true
 
-- `name` (string)
-- `host` (string, optional) - defaults to local hostname
-- `port` (number)
-- `type` (string)
-- `subtypes` (array of strings, optional)
-- `protocol` (string, optional) - `udp` or `tcp` (default)
-- `txt` (object, optional) - a key/value object to broadcast as the TXT
-  record
-- `disableIPv6` (boolean, optional) disble IPv6 addresses
+A Big number is immutable in the sense that it is not changed by its methods.
 
-IANA maintains a [list of official service types and port
-numbers](http://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml).
+    0.3 - 0.1                          // 0.19999999999999998
+    x = new Big(0.3)
+    x.minus(0.1)                       // "0.2"
+    x                                  // "0.3"
 
-#### `bonjour.unpublishAll([callback])`
+The methods that return a Big number can be chained.
 
-Unpublish all services. The optional `callback` will be called when the
-services have been unpublished.
+    x.div(y).plus(z).times(9).minus('1.234567801234567e+8').plus(976.54321).div('2598.11772')
+    x.sqrt().div(y).pow(3).gt(y.mod(z))    // true
 
-#### `bonjour.destroy()`
+Like JavaScript's Number type, there are `toExponential`, `toFixed` and `toPrecision` methods.
 
-Destroy the mdns instance. Closes the udp socket.
+    x = new Big(255.5)
+    x.toExponential(5)                 // "2.55500e+2"
+    x.toFixed(5)                       // "255.50000"
+    x.toPrecision(5)                   // "255.50"
 
-### Browser
+The arithmetic methods always return the exact result except `div`, `sqrt` and `pow`
+(with negative exponent), as these methods involve division.
 
-#### `var browser = bonjour.find(options[, onup])`
+The maximum number of decimal places and the rounding mode used to round the results of these methods is determined by the value of the `DP` and `RM` properties of the `Big` number constructor.
 
-Listen for services advertised on the network. An optional callback can
-be provided as the 2nd argument and will be added as an event listener
-for the `up` event.
+    Big.DP = 10
+    Big.RM = 1
 
-Options (all optional):
+    x = new Big(2);
+    y = new Big(3);
+    z = x.div(y)                       // "0.6666666667"
+    z.sqrt()                           // "0.8164965809"
+    z.pow(-3)                          // "3.3749999995"
+    z.times(z)                         // "0.44444444448888888889"
+    z.times(z).round(10)               // "0.4444444445"
 
-- `type` (string)
-- `subtypes` (array of strings)
-- `protocol` (string) - defaults to `tcp`
-- `txt` (object) - passed into [dns-txt
-  module](https://github.com/watson/dns-txt) contructor. Set to `{
-  binary: true }` if you want to keep the TXT records in binary
+Multiple Big number constructors can be created, each with an independent configuration.
 
-#### `var browser = bonjour.findOne(options[, callback])`
+The value of a Big number is stored in a decimal floating point format in terms of a coefficient, exponent and sign.
 
-Listen for and call the `callback` with the first instance of a service
-matching the `options`. If no `callback` is given, it's expected that
-you listen for the `up` event. The returned `browser` will automatically
-stop it self after the first matching service.
+    x = new Big(-123.456);
+    x.c                                // [1,2,3,4,5,6]    coefficient (i.e. significand)
+    x.e                                // 2                exponent
+    x.s                                // -1               sign
 
-Options are the same as given in the `browser.find` function.
+For further information see the [API](http://mikemcl.github.io/big.js/) reference from the *doc* folder.
 
-#### `Event: up`
+## Test
 
-Emitted every time a new service is found that matches the browser.
+The *test* directory contains the test scripts for each Big number method.
 
-#### `Event: down`
+The tests can be run with Node.js or a browser.
 
-Emitted every time an existing service emmits a goodbye message.
+To run all the tests
 
-#### `Event: txt-update`
+    $ npm test
 
-Emitted every time an existing service does a new announcement with an updated TXT record.
+To test a single method
 
-#### `browser.services()`
+    $ node test/toFixed
 
-An array of services known by the browser to be online.
+For the browser, see *single-test.html* and *every-test.html* in the *test/browser* directory.
 
-#### `browser.start()`
+*big-vs-number.html* is a simple application that enables some of the methods of big.js to be compared with those of JavaScript's Number type.
 
-Start looking for matching services.
+## Performance
 
-#### `browser.stop()`
+The *perf* directory contains two legacy applications and a *lib* directory containing the BigDecimal libraries used by both.
 
-Stop looking for matching services.
+*big-vs-bigdecimal.html* tests the performance of big.js against the JavaScript translations of two versions of BigDecimal, its use should be more or less self-explanatory.
 
-#### `browser.update()`
+* [GWT: java.math.BigDecimal](https://github.com/iriscouch/bigdecimal.js)
+* [ICU4J: com.ibm.icu.math.BigDecimal](https://github.com/dtrebbien/BigDecimal.js)
 
-Broadcast the query again.
+The BigDecimal in the npm registry is the GWT version. It has some bugs, see the Node.js script *perf/lib/bigdecimal_GWT/bugs.js* for examples of flaws in its *remainder*, *divide* and *compareTo* methods.
 
-### Service
+*bigtime.js* is a Node.js command-line application which tests the performance of big.js against the GWT version of
+BigDecimal from the npm registry.
 
-#### `Event: up`
+For example, to compare the time taken by the big.js `plus` method and the BigDecimal `add` method
 
-Emitted when the service is up.
+    $ node bigtime plus 10000 40
 
-#### `Event: error`
+This will time 10000 calls to each, using operands of up to 40 random digits and will check that the results match.
 
-Emitted if an error occurrs while publishing the service.
+For help
 
-#### `service.stop([callback])`
+    $ node bigtime -h
 
-Unpublish the service. The optional `callback` will be called when the
-service have been unpublished.
+## Build
 
-#### `service.start()`
+If [uglify-js](https://github.com/mishoo/UglifyJS2) is installed globally
 
-Publish the service.
+    $ npm install uglify-js -g
 
-#### `service.name`
+then
 
-The name of the service, e.g. `Apple TV`.
+    $ npm run build
 
-#### `service.type`
+will create *big.min.js*.
 
-The type of the service, e.g. `http`.
+## TypeScript
 
-#### `service.subtypes`
+The [DefinitelyTyped](https://github.com/borisyankov/DefinitelyTyped) project has a Typescript type definitions file for big.js.
 
-An array of subtypes. Note that this property might be `null`.
+    $ npm install @types/big.js
 
-#### `service.protocol`
+Any questions about the TypeScript type definitions file should be addressed to the DefinitelyTyped project.
 
-The protocol used by the service, e.g. `tcp`.
+## Feedback
 
-#### `service.host`
+Bugs/comments/questions?
 
-The hostname or ip address where the service resides.
+Open an issue, or email <a href="mailto:M8ch88l@gmail.com">Michael</a>
 
-#### `service.port`
+## Licence
 
-The port on which the service listens, e.g. `5000`.
+[MIT](LICENCE)
 
-#### `service.fqdn`
+## Contributors
 
-The fully qualified domain name of the service. E.g. if given the name
-`Foo Bar`, the type `http` and the protocol `tcp`, the `service.fqdn`
-property will be `Foo Bar._http._tcp.local`.
+This project exists thanks to all the people who contribute. [[Contribute](CONTRIBUTING.md)].
+<a href="graphs/contributors"><img src="https://opencollective.com/bigjs/contributors.svg?width=890&button=false" /></a>
 
-#### `service.txt`
 
-The TXT record advertised by the service (a key/value object). Note that
-this property might be `null`.
+## Backers
 
-#### `service.published`
+Thank you to all our backers! 🙏 [[Become a backer](https://opencollective.com/bigjs#backer)]
 
-A boolean indicating if the service is currently published.
+<a href="https://opencollective.com/bigjs#backers" target="_blank"><img src="https://opencollective.com/bigjs/backers.svg?width=890"></a>
 
-## License
 
-MIT
+## Sponsors
+
+Support this project by becoming a sponsor. Your logo will show up here with a link to your website. [[Become a sponsor](https://opencollective.com/bigjs#sponsor)]
+
+<a href="https://opencollective.com/bigjs/sponsor/0/website" target="_blank"><img src="https://opencollective.com/bigjs/sponsor/0/avatar.svg"></a>
+<a href="https://opencollective.com/bigjs/sponsor/1/website" target="_blank"><img src="https://opencollective.com/bigjs/sponsor/1/avatar.svg"></a>
+<a href="https://opencollective.com/bigjs/sponsor/2/website" target="_blank"><img src="https://opencollective.com/bigjs/sponsor/2/avatar.svg"></a>
+<a href="https://opencollective.com/bigjs/sponsor/3/website" target="_blank"><img src="https://opencollective.com/bigjs/sponsor/3/avatar.svg"></a>
+<a href="https://opencollective.com/bigjs/sponsor/4/website" target="_blank"><img src="https://opencollective.com/bigjs/sponsor/4/avatar.svg"></a>
+<a href="https://opencollective.com/bigjs/sponsor/5/website" target="_blank"><img src="https://opencollective.com/bigjs/sponsor/5/avatar.svg"></a>
+<a href="https://opencollective.com/bigjs/sponsor/6/website" target="_blank"><img src="https://opencollective.com/bigjs/sponsor/6/avatar.svg"></a>
+<a href="https://opencollective.com/bigjs/sponsor/7/website" target="_blank"><img src="https://opencollective.com/bigjs/sponsor/7/avatar.svg"></a>
+<a href="https://opencollective.com/bigjs/sponsor/8/website" target="_blank"><img src="https://opencollective.com/bigjs/sponsor/8/avatar.svg"></a>
+<a href="https://opencollective.com/bigjs/sponsor/9/website" target="_blank"><img src="https://opencollective.com/bigjs/sponsor/9/avatar.svg"></a>
+
+

@@ -1,14 +1,14 @@
-import Browser, { BrowserConfig } from './lib/browser';
-import Service, { ServiceConfig, ServiceReferer } from './lib/service';
-export declare class Bonjour {
-    private server;
-    private registry;
-    constructor(opts?: Partial<ServiceConfig>, errorCallback?: Function | undefined);
-    publish(opts: ServiceConfig): Service;
-    unpublishAll(callback?: CallableFunction | undefined): void;
-    find(opts?: BrowserConfig | null, onup?: (service: Service) => void): Browser;
-    findOne(opts?: BrowserConfig | null, timeout?: number, callback?: CallableFunction): Browser;
-    destroy(callback?: CallableFunction): void;
-}
-export { Service, ServiceReferer, ServiceConfig, Browser, BrowserConfig };
-export default Bonjour;
+/**
+List of binary file extensions.
+
+@example
+```
+import binaryExtensions = require('binary-extensions');
+
+console.log(binaryExtensions);
+//=> ['3ds', '3g2', …]
+```
+*/
+declare const binaryExtensions: readonly string[];
+
+export = binaryExtensions;
