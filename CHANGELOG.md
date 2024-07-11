@@ -1,169 +1,136 @@
-# Changelog
+# Release history
 
-For changes in version v7.0.0 and up please go to [release](https://github.com/babel/babel-loader/releases)
+**All notable changes to this project will be documented in this file.**
 
-# Old Changelog
+The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
+and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## v6.4.1
+<details>
+  <summary><strong>Guiding Principles</strong></summary>
 
-### 🐛 Bug Fix
+- Changelogs are for humans, not machines.
+- There should be an entry for every single version.
+- The same types of changes should be grouped.
+- Versions and sections should be linkable.
+- The latest version comes first.
+- The release date of each versions is displayed.
+- Mention whether you follow Semantic Versioning.
 
-- Fixed reset of BABEL_ENV when options.forceEnv is used (#420) @nikopavlica
+</details>
 
-## v6.4.0
+<details>
+  <summary><strong>Types of changes</strong></summary>
 
-### 🚀 New Feature
+Changelog entries are classified using the following labels _(from [keep-a-changelog](http://keepachangelog.com/)_):
 
-- added metadata passing from babel to webpack, which is currently used by react-intl (#398) @Ognian
+- `Added` for new features.
+- `Changed` for changes in existing functionality.
+- `Deprecated` for soon-to-be removed features.
+- `Removed` for now removed features.
+- `Fixed` for any bug fixes.
+- `Security` in case of vulnerabilities.
 
-## v6.3.2
+</details>
 
-### 😢 Regression
+## 2.3.1 (2022-01-02)
 
-- `forceEnv` was interfering with regular environment handling
+### Fixed
 
-## v6.3.1
+* Fixes bug when a pattern containing an expression after the closing parenthesis (`/!(*.d).{ts,tsx}`) was incorrectly converted to regexp ([9f241ef](https://github.com/micromatch/picomatch/commit/9f241ef)).
 
-### 🐛 Bug Fix
+### Changed
 
- - The new `forceEnv` options wasn't working as expected (#379) @chrisvasz
+* Some documentation improvements ([f81d236](https://github.com/micromatch/picomatch/commit/f81d236), [421e0e7](https://github.com/micromatch/picomatch/commit/421e0e7)).
 
-## v6.3.0
+## 2.3.0 (2021-05-21)
 
-### 🚀 New Feature
+### Fixed
 
-- Add new config option `forceEnv` (#368) @moimael
+* Fixes bug where file names with two dots were not being matched consistently with negation extglobs containing a star ([56083ef](https://github.com/micromatch/picomatch/commit/56083ef))
 
-Allow to override BABEL_ENV/NODE_ENV at loader-level. Useful for isomorphic applications which have   separate babel config for client and server.
+## 2.2.3 (2021-04-10)
 
-### 🐛 Bug Fix
+### Fixed
 
-- Update loader-utils dependency to ^0.2.16 to fix compatibility with webpack 2 (#371) @leonaves
+* Do not skip pattern seperator for square brackets ([fb08a30](https://github.com/micromatch/picomatch/commit/fb08a30)).
+* Set negatedExtGlob also if it does not span the whole pattern ([032e3f5](https://github.com/micromatch/picomatch/commit/032e3f5)).
 
-### 💅 Polish
+## 2.2.2 (2020-03-21)
 
-- Improve FS caching to do less sync calls which improves performance slightly (#375) @akx
+### Fixed
 
-## v6.2.10
+* Correctly handle parts of the pattern after parentheses in the `scan` method ([e15b920](https://github.com/micromatch/picomatch/commit/e15b920)).
 
-Support for webpack 2.2-rc has been added in this release
+## 2.2.1 (2020-01-04)
 
-### 🐛 Bug Fix
+* Fixes [#49](https://github.com/micromatch/picomatch/issues/49), so that braces with no sets or ranges are now propertly treated as literals.
 
-- If cache directory not writable, try to fallback to tmpdir before failing
+## 2.2.0 (2020-01-04)
 
-## v6.2.9
+* Disable fastpaths mode for the parse method ([5b8d33f](https://github.com/micromatch/picomatch/commit/5b8d33f))
+* Add `tokens`, `slashes`, and `parts` to the object returned by `picomatch.scan()`.
 
-### 😢 Regression
+## 2.1.0 (2019-10-31)
 
-Source maps on windows did not work correctly with v6.2.8.
-Thanks @josephst
+* add benchmarks for scan ([4793b92](https://github.com/micromatch/picomatch/commit/4793b92))
+* Add eslint object-curly-spacing rule ([707c650](https://github.com/micromatch/picomatch/commit/707c650))
+* Add prefer-const eslint rule ([5c7501c](https://github.com/micromatch/picomatch/commit/5c7501c))
+* Add support for nonegate in scan API ([275c9b9](https://github.com/micromatch/picomatch/commit/275c9b9))
+* Change lets to consts. Move root import up. ([4840625](https://github.com/micromatch/picomatch/commit/4840625))
+* closes https://github.com/micromatch/picomatch/issues/21 ([766bcb0](https://github.com/micromatch/picomatch/commit/766bcb0))
+* Fix "Extglobs" table in readme ([eb19da8](https://github.com/micromatch/picomatch/commit/eb19da8))
+* fixes https://github.com/micromatch/picomatch/issues/20 ([9caca07](https://github.com/micromatch/picomatch/commit/9caca07))
+* fixes https://github.com/micromatch/picomatch/issues/26 ([fa58f45](https://github.com/micromatch/picomatch/commit/fa58f45))
+* Lint test ([d433a34](https://github.com/micromatch/picomatch/commit/d433a34))
+* lint unit tests ([0159b55](https://github.com/micromatch/picomatch/commit/0159b55))
+* Make scan work with noext ([6c02e03](https://github.com/micromatch/picomatch/commit/6c02e03))
+* minor linting ([c2a2b87](https://github.com/micromatch/picomatch/commit/c2a2b87))
+* minor parser improvements ([197671d](https://github.com/micromatch/picomatch/commit/197671d))
+* remove eslint since it... ([07876fa](https://github.com/micromatch/picomatch/commit/07876fa))
+* remove funding file ([8ebe96d](https://github.com/micromatch/picomatch/commit/8ebe96d))
+* Remove unused funks ([cbc6d54](https://github.com/micromatch/picomatch/commit/cbc6d54))
+* Run eslint during pretest, fix existing eslint findings ([0682367](https://github.com/micromatch/picomatch/commit/0682367))
+* support `noparen` in scan ([3d37569](https://github.com/micromatch/picomatch/commit/3d37569))
+* update changelog ([7b34e77](https://github.com/micromatch/picomatch/commit/7b34e77))
+* update travis ([777f038](https://github.com/micromatch/picomatch/commit/777f038))
+* Use eslint-disable-next-line instead of eslint-disable ([4e7c1fd](https://github.com/micromatch/picomatch/commit/4e7c1fd))
 
-### 🏠 Internal
+## 2.0.7 (2019-05-14)
 
-- Add AppVeyor to run tests on windows @danez
-- Fix tests on windows (#343) @danez
+* 2.0.7 ([9eb9a71](https://github.com/micromatch/picomatch/commit/9eb9a71))
+* supports lookbehinds ([1f63f7e](https://github.com/micromatch/picomatch/commit/1f63f7e))
+* update .verb.md file with typo change ([2741279](https://github.com/micromatch/picomatch/commit/2741279))
+* fix: typo in README ([0753e44](https://github.com/micromatch/picomatch/commit/0753e44))
 
-## v6.2.8
+## 2.0.4 (2019-04-10)
 
-### 🐛 Bug Fix
+### Fixed
 
-- gzipped files should have `.gz` as the extension, not `.gzip` (#326) @bjornstar
-- fix options.sourceFileName gennerate bug (#260) @creeperyang
+- Readme link [fixed](https://github.com/micromatch/picomatch/pull/13/commits/a96ab3aa2b11b6861c23289964613d85563b05df) by @danez.
+- `options.capture` now works as expected when fastpaths are enabled. See https://github.com/micromatch/picomatch/pull/12/commits/26aefd71f1cfaf95c37f1c1fcab68a693b037304. Thanks to @DrPizza.
 
-### 📝 Documentation
+## 2.0.0 (2019-04-10)
 
-- Update README docs for cacheDirectory's actual behaviour (#245) @sohkai
-- updates docs re: transform-runtime (#197) @gbrassey
+### Added
 
-### 🏠 Internal
+- Adds support for `options.onIgnore`. See the readme for details
+- Adds support for `options.onResult`. See the readme for details
 
-- Use eslint and nyc (#321) @danez
-- Adjust travis config (#320) @danez
-- Use babel to compile babel-loader (#319) @danez
+### Breaking changes
 
-## v6.2.7
+- The unixify option was renamed to `windows`
+- caching and all related options and methods have been removed
 
-### 😢 Regression
+## 1.0.0 (2018-11-05)
 
-Fallback to `os.tmpdir()` if no cachedir found (#318) (fixes #317) @danez
+- adds `.onMatch` option
+- improvements to `.scan` method
+- numerous improvements and optimizations for matching and parsing
+- better windows path handling
 
-Fixes an issue with v6.2.6 when using `babel-loader` as a global package.
+## 0.1.0 - 2017-04-13
 
-## v6.2.6
+First release.
 
-### 🐛 Bug Fix
 
-- Use standard cache dir as default `cacheDirectory` (#301) @fson
-
-Use the common cache directory, `./node_modules/.cache/babel-loader`, as the default cache directory (when the cacheDirectory setting is enabled).
-
-```js
-query: {
-  cacheDirectory: true
-}
-```
-
-## v6.2.5
-
-- Don't show the call stack for a Babel error (such as when you have a syntax error)
-
-<img width="415" alt="screenshot 2016-08-15 15 24 37" src="https://cloud.githubusercontent.com/assets/30594/17664401/727ba098-62fc-11e6-9f12-42da0cf47f14.png">
-
-- resolve the .babelrc relative to the file path rather than the cwd (current working directory).
-
- * fix: more concise formatting for Babel errors (#287) (Andrey Popp)
- * fix(resolve-rc): resolve-rc relative file path (#253) (Luke Page)
- * add babel-core and preset-2015 to dev dependencies (#273) (timse)
- * chore(docs): add issue and pr templates (#280) (Joshua Wiens)
- * chore(docs): fix badge formatting (Joshua Wiens)
- * chore(ci): expand travis testing (#278) (Joshua Wiens)
- * Update README: add env vars to cacheIdentifier (#267) (Dominik Ferber)
- * add npm badge [skip ci] (Henry Zhu)
- * update [skip ci] (Henry Zhu)
- * remove jsx references as well [skip ci] (Henry Zhu)
- * Save the transform to devDependencies (Ray Booysen)
- * Remove 'react' preset (Jake Rios)
- * Removed babel-preset-react from README.md (Ben Stephenson)
-
-## v6.2.4
- * change allowed peer deps (all webpack 2 beta versions)
-
-## v6.2.3
- * change allowed peer deps (2.0.7-beta)
-
-## v6.2.2
-  * Update peerDependencies to accept webpack 2 [#208](https://github.com/babel/babel-loader/pull/208)
-  * Remove duplicated dependencies
-
-## v6.2.0
-  * Pass true filenames [#106](https://github.com/babel/babel-loader/issues/106)
-  * Remove babel-core from devDependencies
-
-## v6.1.0
-
-  * Merge [PR #146](https://github.com/babel/babel-loader/pull/146) Set source file name relative to options.sourceRoot
-  * Merge [PR #136](https://github.com/babel/babel-loader/pull/136) use container-based infrastructure for faster build
-  * Merge [PR #121](https://github.com/babel/babel-loader/pull/121) Make babelrc configurable
-  * Merge [PR #113](https://github.com/babel/babel-loader/pull/113) Include BABEL_ENV || NODE_ENV in cacheIdentifier
-
-## v6.0.1
-
-  * Update to babel v6.
-
-## v5.3.1
-
-  * Merge [PR #85](https://github.com/babel/babel-loader/pull/85) - Don't override sourcemap if sourcesContent already exists.
-
-
-## v5.3.1
-
-  * Merge [PR #82](https://github.com/babel/babel-loader/pull/82) - Fallback global options to empty object to avoid conflicts with object-assign polyfill.
-
-## v5.3.0
-
-  * Merge [PR #79](https://github.com/babel/babel-loader/pull/79) - This should allow babel-loader to work with [enhanced-require](https://github.com/webpack/enhanced-require).
-
-## v5.2.0
-
-  * Include `.babelrc` file into the `cacheIdentifier` if it exists
+[keep-a-changelog]: https://github.com/olivierlacan/keep-a-changelog

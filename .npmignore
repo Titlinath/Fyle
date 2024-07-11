@@ -1,4 +1,7 @@
-support
-test
-examples
-*.sock
+.git*
+test/
+test-browser/
+build/
+.travis.yml
+*.swp
+Makefile

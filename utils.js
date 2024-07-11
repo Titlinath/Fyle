@@ -1,93 +1,64 @@
-let { list } = require('postcss')
+'use strict';
 
-/**
- * Throw special error, to tell beniary,
- * that this error is from Autoprefixer.
- */
-module.exports.error = function (text) {
-  let err = new Error(text)
-  err.autoprefixer = true
-  throw err
-}
+const path = require('path');
+const win32 = process.platform === 'win32';
+const {
+  REGEX_BACKSLASH,
+  REGEX_REMOVE_BACKSLASH,
+  REGEX_SPECIAL_CHARS,
+  REGEX_SPECIAL_CHARS_GLOBAL
+} = require('./constants');
 
-/**
- * Return array, that doesn’t contain duplicates.
- */
-module.exports.uniq = function (array) {
-  return [...new Set(array)]
-}
+exports.isObject = val => val !== null && typeof val === 'object' && !Array.isArray(val);
+exports.hasRegexChars = str => REGEX_SPECIAL_CHARS.test(str);
+exports.isRegexChar = str => str.length === 1 && exports.hasRegexChars(str);
+exports.escapeRegex = str => str.replace(REGEX_SPECIAL_CHARS_GLOBAL, '\\$1');
+exports.toPosixSlashes = str => str.replace(REGEX_BACKSLASH, '/');
 
-/**
- * Return "-webkit-" on "-webkit- old"
- */
-module.exports.removeNote = function (string) {
-  if (!string.includes(' ')) {
-    return string
+exports.removeBackslashes = str => {
+  return str.replace(REGEX_REMOVE_BACKSLASH, match => {
+    return match === '\\' ? '' : match;
+  });
+};
+
+exports.supportsLookbehinds = () => {
+  const segs = process.version.slice(1).split('.').map(Number);
+  if (segs.length === 3 && segs[0] >= 9 || (segs[0] === 8 && segs[1] >= 10)) {
+    return true;
   }
+  return false;
+};
 
-  return string.split(' ')[0]
-}
-
-/**
- * Escape RegExp symbols
- */
-module.exports.escapeRegexp = function (string) {
-  return string.replace(/[$()*+-.?[\\\]^{|}]/g, '\\$&')
-}
-
-/**
- * Return regexp to check, that CSS string contain word
- */
-module.exports.regexp = function (word, escape = true) {
-  if (escape) {
-    word = this.escapeRegexp(word)
+exports.isWindows = options => {
+  if (options && typeof options.windows === 'boolean') {
+    return options.windows;
   }
-  return new RegExp(`(^|[\\s,(])(${word}($|[\\s(,]))`, 'gi')
-}
+  return win32 === true || path.sep === '\\';
+};
 
-/**
- * Change comma list
- */
-module.exports.editList = function (value, callback) {
-  let origin = list.comma(value)
-  let changed = callback(origin, [])
+exports.escapeLast = (input, char, lastIdx) => {
+  const idx = input.lastIndexOf(char, lastIdx);
+  if (idx === -1) return input;
+  if (input[idx - 1] === '\\') return exports.escapeLast(input, char, idx - 1);
+  return `${input.slice(0, idx)}\\${input.slice(idx)}`;
+};
 
-  if (origin === changed) {
-    return value
+exports.removePrefix = (input, state = {}) => {
+  let output = input;
+  if (output.startsWith('./')) {
+    output = output.slice(2);
+    state.prefix = './';
   }
+  return output;
+};
 
-  let join = value.match(/,\s*/)
-  join = join ? join[0] : ', '
-  return changed.join(join)
-}
+exports.wrapOutput = (input, state = {}, options = {}) => {
+  const prepend = options.contains ? '' : '^';
+  const append = options.contains ? '' : '$';
 
-/**
- * Split the selector into parts.
- * It returns 3 level deep array because selectors can be comma
- * separated (1), space separated (2), and combined (3)
- * @param {String} selector selector string
- * @return {Array<Array<Array>>} 3 level deep array of split selector
- * @see utils.test.js for examples
- */
-module.exports.splitSelector = function (selector) {
-  return list.comma(selector).map(i => {
-    return list.space(i).map(k => {
-      return k.split(/(?=\.|#)/g)
-    })
-  })
-}
-
-/**
- * Return true if a given value only contains numbers.
- * @param {*} value
- * @returns {boolean}
- */
-module.exports.isPureNumber = function (value) {
-  if (typeof value === 'number') {
-    return true
+  let output = `${prepend}(?:${input})${append}`;
+  if (state.negated === true) {
+    output = `(?:^(?!${output}).*$)`;
   }
-  if (typeof value === 'string') {
-    return /^[0-9]+$/.test(value)
-  }
-  return false
-}
+  return output;
+};

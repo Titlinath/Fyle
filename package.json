@@ -1,49 +1,81 @@
 {
-  "name": "autoprefixer",
-  "version": "10.4.19",
-  "description": "Parse CSS and add vendor prefixes to CSS rules using values from the Can I Use website",
+  "name": "picomatch",
+  "description": "Blazing fast and accurate glob matcher written in JavaScript, with no dependencies and full support for standard and extended Bash glob features, including braces, extglobs, POSIX brackets, and regular expressions.",
+  "version": "2.3.1",
+  "homepage": "https://github.com/micromatch/picomatch",
+  "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
+  "funding": "https://github.com/sponsors/jonschlinkert",
+  "repository": "micromatch/picomatch",
+  "bugs": {
+    "url": "https://github.com/micromatch/picomatch/issues"
+  },
+  "license": "MIT",
+  "files": [
+    "index.js",
+    "lib"
+  ],
+  "main": "index.js",
   "engines": {
-    "node": "^10 || ^12 || >=14"
+    "node": ">=8.6"
+  },
+  "scripts": {
+    "lint": "eslint --cache --cache-location node_modules/.cache/.eslintcache --report-unused-disable-directives --ignore-path .gitignore .",
+    "mocha": "mocha --reporter dot",
+    "test": "npm run lint && npm run mocha",
+    "test:ci": "npm run test:cover",
+    "test:cover": "nyc npm run mocha"
+  },
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "fill-range": "^7.0.1",
+    "gulp-format-md": "^2.0.0",
+    "mocha": "^6.2.2",
+    "nyc": "^15.0.0",
+    "time-require": "github:jonschlinkert/time-require"
   },
   "keywords": [
-    "autoprefixer",
-    "css",
-    "prefix",
-    "postcss",
-    "postcss-plugin"
+    "glob",
+    "match",
+    "picomatch"
   ],
-  "main": "lib/autoprefixer.js",
-  "bin": "bin/autoprefixer",
-  "types": "lib/autoprefixer.d.ts",
-  "funding": [
-    {
-      "type": "opencollective",
-      "url": "https://opencollective.com/postcss/"
-    },
-    {
-      "type": "tidelift",
-      "url": "https://tidelift.com/funding/github/npm/autoprefixer"
-    },
-    {
-      "type": "github",
-      "url": "https://github.com/sponsors/ai"
-    }
-  ],
-  "author": "Andrey Sitnik <andrey@sitnik.ru>",
-  "license": "MIT",
-  "repository": "postcss/autoprefixer",
-  "bugs": {
-    "url": "https://github.com/postcss/autoprefixer/issues"
+  "nyc": {
+    "reporter": [
+      "html",
+      "lcov",
+      "text-summary"
+    ]
   },
-  "peerDependencies": {
-    "postcss": "^8.1.0"
-  },
-  "dependencies": {
-    "browserslist": "^4.23.0",
-    "caniuse-lite": "^1.0.30001599",
-    "fraction.js": "^4.3.7",
-    "normalize-range": "^0.1.2",
-    "picocolors": "^1.0.0",
-    "postcss-value-parser": "^4.2.0"
+  "verb": {
+    "toc": {
+      "render": true,
+      "method": "preWrite",
+      "maxdepth": 3
+    },
+    "layout": "empty",
+    "tasks": [
+      "readme"
+    ],
+    "plugins": [
+      "gulp-format-md"
+    ],
+    "lint": {
+      "reflinks": true
+    },
+    "related": {
+      "list": [
+        "braces",
+        "micromatch"
+      ]
+    },
+    "reflinks": [
+      "braces",
+      "expand-brackets",
+      "extglob",
+      "fill-range",
+      "micromatch",
+      "minimatch",
+      "nanomatch",
+      "picomatch"
+    ]
   }
 }
