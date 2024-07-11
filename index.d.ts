@@ -1,3 +1,2 @@
-declare function hasOwn<O, K extends PropertyKey, V = unknown>(o: O, p: K): o is O & Record<K, V>;
-
-export = hasOwn;
+declare const _default: (position?: number) => any;
+export = _default;

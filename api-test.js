@@ -1,226 +1,110 @@
-var assert = require('assert');
-var net = require('net');
-var http = require('http');
-var streamPair = require('stream-pair');
-var thing = require('handle-thing');
+/* eslint-env mocha */
 
-var httpDeceiver = require('../');
+var assert = require('assert')
+var net = require('net')
+var streamPair = require('stream-pair')
 
-describe('HTTP Deceiver', function() {
-  var handle;
-  var pair;
+var thing = require('../')
+
+describe('Handle Thing', function () {
+  var handle
+  var pair
   var socket;
-  var deceiver;
 
-  beforeEach(function() {
-    pair = streamPair.create();
-    handle = thing.create(pair.other);
-    socket = new net.Socket({ handle: handle });
+  [ 'normal', 'lazy' ].forEach(function (mode) {
+    describe(mode, function () {
+      beforeEach(function () {
+        pair = streamPair.create()
+        handle = thing.create(mode === 'normal' ? pair.other : null)
+        socket = new net.Socket({
+          handle: handle,
+          readable: true,
+          writable: true
+        })
 
-    // For v0.8
-    socket.readable = true;
-    socket.writable = true;
-
-    deceiver = httpDeceiver.create(socket);
-  });
-
-  it('should emit request', function(done) {
-    var server = http.createServer();
-    server.emit('connection', socket);
-
-    server.on('request', function(req, res) {
-      assert.equal(req.method, 'PUT');
-      assert.equal(req.url, '/hello');
-      assert.deepEqual(req.headers, { a: 'b' });
-
-      done();
-    });
-
-    deceiver.emitRequest({
-      method: 'PUT',
-      path: '/hello',
-      headers: {
-        a: 'b'
-      }
-    });
-  });
-
-  it('should emit response', function(done) {
-    var agent = new http.Agent();
-    agent.createConnection = function createConnection() {
-      return socket;
-    };
-    var client = http.request({
-      method: 'POST',
-      path: '/ok',
-      agent: agent
-    }, function(res) {
-      assert.equal(res.statusCode, 421);
-      assert.deepEqual(res.headers, { a: 'b' });
-
-      done();
-    });
-
-    process.nextTick(function() {
-      deceiver.emitResponse({
-        status: 421,
-        reason: 'F',
-        headers: {
-          a: 'b'
+        if (mode === 'lazy') {
+          setTimeout(function () {
+            handle.setStream(pair.other)
+          }, 50)
         }
-      });
-    });
-  });
+      })
 
-  it('should override .execute and .finish', function(done) {
-    var server = http.createServer();
-    server.emit('connection', socket);
+      afterEach(function () {
+        assert(handle._stream)
+      })
 
-    server.on('request', function(req, res) {
-      assert.equal(req.method, 'PUT');
-      assert.equal(req.url, '/hello');
-      assert.deepEqual(req.headers, { a: 'b' });
+      it('should write data to Socket', function (done) {
+        pair.write('hello')
+        pair.write(' world')
+        pair.end('... ok')
 
-      var actual = '';
-      req.on('data', function(chunk) {
-        actual += chunk;
-      });
-      req.once('end', function() {
-        assert.equal(actual, 'hello world');
-        done();
-      });
-    });
+        var chunks = ''
+        socket.on('data', function (chunk) {
+          chunks += chunk
+        })
+        socket.on('end', function () {
+          assert.strictEqual(chunks, 'hello world... ok')
 
-    deceiver.emitRequest({
-      method: 'PUT',
-      path: '/hello',
-      headers: {
-        a: 'b'
-      }
-    });
+          // allowHalfOpen is `false`, so the `end` should be followed by `close`
+          socket.once('close', function () {
+            done()
+          })
+        })
+      })
 
-    pair.write('hello');
-    pair.end(' world');
-  });
+      it('should read data from Socket', function (done) {
+        socket.write('hello')
+        socket.write(' world')
+        socket.end('... ok')
 
-  it('should work with reusing parser', function(done) {
-    var server = http.createServer();
-    server.emit('connection', socket);
+        var chunks = ''
+        pair.on('data', function (chunk) {
+          chunks += chunk
+        })
+        pair.on('end', function () {
+          assert.strictEqual(chunks, 'hello world... ok')
 
-    function secondRequest() {
-      pair = streamPair.create();
-      handle = thing.create(pair.other);
-      socket = new net.Socket({ handle: handle });
+          done()
+        })
+      })
 
-      // For v0.8
-      socket.readable = true;
-      socket.writable = true;
-
-      server.emit('connection', socket);
-
-      pair.end('PUT /second HTTP/1.1\r\nContent-Length:11\r\n\r\nhello world');
-    }
-
-    server.on('request', function(req, res) {
-      var actual = '';
-      req.on('data', function(chunk) {
-        actual += chunk;
-      });
-      req.once('end', function() {
-        assert.equal(actual, 'hello world');
-
-        if (req.url === '/first')
-          secondRequest();
-        else
-          done();
-      });
-    });
-
-    deceiver.emitRequest({
-      method: 'PUT',
-      path: '/first',
-      headers: {
-        a: 'b'
-      }
-    });
-
-    pair.write('hello');
-    pair.end(' world');
-  });
-
-  it('should emit CONNECT request', function(done) {
-    var server = http.createServer();
-    server.emit('connection', socket);
-
-    server.on('connect', function(req, socket, bodyHead) {
-      assert.equal(req.method, 'CONNECT');
-      assert.equal(req.url, '/hello');
-
-      done();
-    });
-
-    deceiver.emitRequest({
-      method: 'CONNECT',
-      path: '/hello',
-      headers: {
-      }
-    });
-  });
-
-  it('should emit Upgrade request', function(done) {
-    var server = http.createServer();
-    server.emit('connection', socket);
-
-    server.on('upgrade', function(req, socket, bodyHead) {
-      assert.equal(req.method, 'POST');
-      assert.equal(req.url, '/hello');
-
-      socket.on('data', function(chunk) {
-        assert.equal(chunk + '', 'hm');
-        done();
-      });
-    });
-
-    deceiver.emitRequest({
-      method: 'POST',
-      path: '/hello',
-      headers: {
-        'upgrade': 'websocket'
-      }
-    });
-
-    pair.write('hm');
-  });
-
-  it('should emit Upgrade response', function(done) {
-    var agent = new http.Agent();
-    agent.createConnection = function createConnection() {
-      return socket;
-    };
-    var client = http.request({
-      method: 'POST',
-      path: '/ok',
-      headers: {
-        connection: 'upgrade',
-        upgrade: 'websocket'
-      },
-      agent: agent
-    }, function(res) {
-      assert(false);
-    });
-    client.on('upgrade', function(res, socket) {
-      assert.equal(res.statusCode, 421);
-      done();
-    });
-
-    process.nextTick(function() {
-      deceiver.emitResponse({
-        status: 421,
-        reason: 'F',
-        headers: {
-          upgrade: 'websocket'
+      it('should invoke `close` callback', function (done) {
+        handle._options.close = function (callback) {
+          done()
+          process.nextTick(callback)
         }
-      });
-    });
-  });
-});
+
+        pair.end('hello')
+        socket.resume()
+      })
+
+      it('should kill pending requests', function (done) {
+        handle._options.close = function () {
+          setTimeout(done, 75)
+        }
+
+        socket.write('hello')
+        socket.destroy()
+      })
+
+      if (mode === 'normal') {
+        it('should invoke `getPeerName` callback', function () {
+          handle._options.getPeerName = function () {
+            return { address: 'ohai' }
+          }
+
+          assert.strictEqual(socket.remoteAddress, 'ohai')
+        })
+
+        it('should emit ECONNRESET at `close` event', function (done) {
+          pair.other.emit('close')
+
+          socket.on('error', function (err) {
+            assert(/ECONNRESET/.test(err.message))
+            done()
+          })
+        })
+      }
+    })
+  })
+})

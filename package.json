@@ -1,44 +1,42 @@
 {
-  "name": "has-flag",
-  "version": "3.0.0",
-  "description": "Check if argv has a specific flag",
-  "license": "MIT",
-  "repository": "sindresorhus/has-flag",
-  "author": {
-    "name": "Sindre Sorhus",
-    "email": "sindresorhus@gmail.com",
-    "url": "sindresorhus.com"
-  },
-  "engines": {
-    "node": ">=4"
-  },
-  "scripts": {
-    "test": "xo && ava"
+  "name": "get-caller-file",
+  "version": "2.0.5",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
   },
   "files": [
-    "index.js"
+    "index.js",
+    "index.js.map",
+    "index.d.ts"
   ],
-  "keywords": [
-    "has",
-    "check",
-    "detect",
-    "contains",
-    "find",
-    "flag",
-    "cli",
-    "command-line",
-    "argv",
-    "process",
-    "arg",
-    "args",
-    "argument",
-    "arguments",
-    "getopt",
-    "minimist",
-    "optimist"
-  ],
+  "scripts": {
+    "prepare": "tsc",
+    "test": "mocha test",
+    "test:debug": "mocha test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stefanpenner/get-caller-file.git"
+  },
+  "author": "Stefan Penner",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/stefanpenner/get-caller-file/issues"
+  },
+  "homepage": "https://github.com/stefanpenner/get-caller-file#readme",
   "devDependencies": {
-    "ava": "*",
-    "xo": "*"
+    "@types/chai": "^4.1.7",
+    "@types/ensure-posix-path": "^1.0.0",
+    "@types/mocha": "^5.2.6",
+    "@types/node": "^11.10.5",
+    "chai": "^4.1.2",
+    "ensure-posix-path": "^1.0.1",
+    "mocha": "^5.2.0",
+    "typescript": "^3.3.3333"
+  },
+  "engines": {
+    "node": "6.* || 8.* || >= 10.*"
   }
 }

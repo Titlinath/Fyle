@@ -1,40 +1,41 @@
-# hasown <sup>[![Version Badge][npm-version-svg]][package-url]</sup>
+# get-caller-file
 
-[![github actions][actions-image]][actions-url]
-[![coverage][codecov-image]][codecov-url]
-[![License][license-image]][license-url]
-[![Downloads][downloads-image]][downloads-url]
+[![Build Status](https://travis-ci.org/stefanpenner/get-caller-file.svg?branch=master)](https://travis-ci.org/stefanpenner/get-caller-file)
+[![Build status](https://ci.appveyor.com/api/projects/status/ol2q94g1932cy14a/branch/master?svg=true)](https://ci.appveyor.com/project/embercli/get-caller-file/branch/master)
 
-[![npm badge][npm-badge-png]][package-url]
+This is a utility, which allows a function to figure out from which file it was invoked. It does so by inspecting v8's stack trace at the time it is invoked.
 
-A robust, ES3 compatible, "has own property" predicate.
+Inspired by http://stackoverflow.com/questions/13227489
 
-## Example
+*note: this relies on Node/V8 specific APIs, as such other runtimes may not work*
 
-```js
-const assert = require('assert');
-const hasOwn = require('hasown');
+## Installation
 
-assert.equal(hasOwn({}, 'toString'), false);
-assert.equal(hasOwn([], 'length'), true);
-assert.equal(hasOwn({ a: 42 }, 'a'), true);
+```bash
+yarn add get-caller-file
 ```
 
-## Tests
-Simply clone the repo, `npm install`, and run `npm test`
+## Usage
 
-[package-url]: https://npmjs.org/package/hasown
-[npm-version-svg]: https://versionbadg.es/inspect-js/hasown.svg
-[deps-svg]: https://david-dm.org/inspect-js/hasOwn.svg
-[deps-url]: https://david-dm.org/inspect-js/hasOwn
-[dev-deps-svg]: https://david-dm.org/inspect-js/hasOwn/dev-status.svg
-[dev-deps-url]: https://david-dm.org/inspect-js/hasOwn#info=devDependencies
-[npm-badge-png]: https://nodei.co/npm/hasown.png?downloads=true&stars=true
-[license-image]: https://img.shields.io/npm/l/hasown.svg
-[license-url]: LICENSE
-[downloads-image]: https://img.shields.io/npm/dm/hasown.svg
-[downloads-url]: https://npm-stat.com/charts.html?package=hasown
-[codecov-image]: https://codecov.io/gh/inspect-js/hasOwn/branch/main/graphs/badge.svg
-[codecov-url]: https://app.codecov.io/gh/inspect-js/hasOwn/
-[actions-image]: https://img.shields.io/endpoint?url=https://github-actions-badge-u3jn4tfpocch.runkit.sh/inspect-js/hasOwn
-[actions-url]: https://github.com/inspect-js/hasOwn/actions
+Given:
+
+```js
+// ./foo.js
+const getCallerFile = require('get-caller-file');
+
+module.exports = function() {
+  return getCallerFile(); // figures out who called it
+};
+```
+
+```js
+// index.js
+const foo = require('./foo');
+
+foo() // => /full/path/to/this/file/index.js
+```
+
+
+## Options:
+
+* `getCallerFile(position = 2)`: where position is stack frame whos fileName we want.

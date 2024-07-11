@@ -1,248 +1,238 @@
-var common   = exports,
-    url      = require('url'),
-    extend   = require('util')._extend,
-    required = require('requires-port');
+exports.setopts = setopts
+exports.ownProp = ownProp
+exports.makeAbs = makeAbs
+exports.finish = finish
+exports.mark = mark
+exports.isIgnored = isIgnored
+exports.childrenIgnored = childrenIgnored
 
-var upgradeHeader = /(^|,)\s*upgrade\s*($|,)/i,
-    isSSL = /^https|wss/;
+function ownProp (obj, field) {
+  return Object.prototype.hasOwnProperty.call(obj, field)
+}
 
-/**
- * Simple Regex for testing if protocol is https
- */
-common.isSSL = isSSL;
-/**
- * Copies the right headers from `options` and `req` to
- * `outgoing` which is then used to fire the proxied
- * request.
- *
- * Examples:
- *
- *    common.setupOutgoing(outgoing, options, req)
- *    // => { host: ..., hostname: ...}
- *
- * @param {Object} Outgoing Base object to be filled with required properties
- * @param {Object} Options Config object passed to the proxy
- * @param {ClientRequest} Req Request Object
- * @param {String} Forward String to select forward or target
- * 
- * @return {Object} Outgoing Object with all required properties set
- *
- * @api private
- */
+var fs = require("fs")
+var path = require("path")
+var minimatch = require("minimatch")
+var isAbsolute = require("path-is-absolute")
+var Minimatch = minimatch.Minimatch
 
-common.setupOutgoing = function(outgoing, options, req, forward) {
-  outgoing.port = options[forward || 'target'].port ||
-                  (isSSL.test(options[forward || 'target'].protocol) ? 443 : 80);
+function alphasort (a, b) {
+  return a.localeCompare(b, 'en')
+}
 
-  ['host', 'hostname', 'socketPath', 'pfx', 'key',
-    'passphrase', 'cert', 'ca', 'ciphers', 'secureProtocol'].forEach(
-    function(e) { outgoing[e] = options[forward || 'target'][e]; }
-  );
+function setupIgnores (self, options) {
+  self.ignore = options.ignore || []
 
-  outgoing.method = options.method || req.method;
-  outgoing.headers = extend({}, req.headers);
+  if (!Array.isArray(self.ignore))
+    self.ignore = [self.ignore]
 
-  if (options.headers){
-    extend(outgoing.headers, options.headers);
+  if (self.ignore.length) {
+    self.ignore = self.ignore.map(ignoreMap)
+  }
+}
+
+// ignore patterns are always in dot:true mode.
+function ignoreMap (pattern) {
+  var gmatcher = null
+  if (pattern.slice(-3) === '/**') {
+    var gpattern = pattern.replace(/(\/\*\*)+$/, '')
+    gmatcher = new Minimatch(gpattern, { dot: true })
   }
 
-  if (options.auth) {
-    outgoing.auth = options.auth;
+  return {
+    matcher: new Minimatch(pattern, { dot: true }),
+    gmatcher: gmatcher
   }
-  
-  if (options.ca) {
-      outgoing.ca = options.ca;
-  }
+}
 
-  if (isSSL.test(options[forward || 'target'].protocol)) {
-    outgoing.rejectUnauthorized = (typeof options.secure === "undefined") ? true : options.secure;
-  }
+function setopts (self, pattern, options) {
+  if (!options)
+    options = {}
 
-
-  outgoing.agent = options.agent || false;
-  outgoing.localAddress = options.localAddress;
-
-  //
-  // Remark: If we are false and not upgrading, set the connection: close. This is the right thing to do
-  // as node core doesn't handle this COMPLETELY properly yet.
-  //
-  if (!outgoing.agent) {
-    outgoing.headers = outgoing.headers || {};
-    if (typeof outgoing.headers.connection !== 'string'
-        || !upgradeHeader.test(outgoing.headers.connection)
-       ) { outgoing.headers.connection = 'close'; }
-  }
-
-
-  // the final path is target path + relative path requested by user:
-  var target = options[forward || 'target'];
-  var targetPath = target && options.prependPath !== false
-    ? (target.path || '')
-    : '';
-
-  //
-  // Remark: Can we somehow not use url.parse as a perf optimization?
-  //
-  var outgoingPath = !options.toProxy
-    ? (url.parse(req.url).path || '')
-    : req.url;
-
-  //
-  // Remark: ignorePath will just straight up ignore whatever the request's
-  // path is. This can be labeled as FOOT-GUN material if you do not know what
-  // you are doing and are using conflicting options.
-  //
-  outgoingPath = !options.ignorePath ? outgoingPath : '';
-
-  outgoing.path = common.urlJoin(targetPath, outgoingPath);
-
-  if (options.changeOrigin) {
-    outgoing.headers.host =
-      required(outgoing.port, options[forward || 'target'].protocol) && !hasPort(outgoing.host)
-        ? outgoing.host + ':' + outgoing.port
-        : outgoing.host;
-  }
-  return outgoing;
-};
-
-/**
- * Set the proper configuration for sockets,
- * set no delay and set keep alive, also set
- * the timeout to 0.
- *
- * Examples:
- *
- *    common.setupSocket(socket)
- *    // => Socket
- *
- * @param {Socket} Socket instance to setup
- * 
- * @return {Socket} Return the configured socket.
- *
- * @api private
- */
-
-common.setupSocket = function(socket) {
-  socket.setTimeout(0);
-  socket.setNoDelay(true);
-
-  socket.setKeepAlive(true, 0);
-
-  return socket;
-};
-
-/**
- * Get the port number from the host. Or guess it based on the connection type.
- *
- * @param {Request} req Incoming HTTP request.
- *
- * @return {String} The port number.
- *
- * @api private
- */
-common.getPort = function(req) {
-  var res = req.headers.host ? req.headers.host.match(/:(\d+)/) : '';
-
-  return res ?
-    res[1] :
-    common.hasEncryptedConnection(req) ? '443' : '80';
-};
-
-/**
- * Check if the request has an encrypted connection.
- *
- * @param {Request} req Incoming HTTP request.
- *
- * @return {Boolean} Whether the connection is encrypted or not.
- *
- * @api private
- */
-common.hasEncryptedConnection = function(req) {
-  return Boolean(req.connection.encrypted || req.connection.pair);
-};
-
-/**
- * OS-agnostic join (doesn't break on URLs like path.join does on Windows)>
- *
- * @return {String} The generated path.
- *
- * @api private
- */
-
-common.urlJoin = function() {
-    //
-    // We do not want to mess with the query string. All we want to touch is the path.
-    //
-  var args = Array.prototype.slice.call(arguments),
-      lastIndex = args.length - 1,
-      last = args[lastIndex],
-      lastSegs = last.split('?'),
-      retSegs;
-
-  args[lastIndex] = lastSegs.shift();
-
-  //
-  // Join all strings, but remove empty strings so we don't get extra slashes from
-  // joining e.g. ['', 'am']
-  //
-  retSegs = [
-    args.filter(Boolean).join('/')
-        .replace(/\/+/g, '/')
-        .replace('http:/', 'http://')
-        .replace('https:/', 'https://')
-  ];
-
-  // Only join the query string if it exists so we don't have trailing a '?'
-  // on every request
-
-  // Handle case where there could be multiple ? in the URL.
-  retSegs.push.apply(retSegs, lastSegs);
-
-  return retSegs.join('?')
-};
-
-/**
- * Rewrites or removes the domain of a cookie header
- *
- * @param {String|Array} Header
- * @param {Object} Config, mapping of domain to rewritten domain.
- *                 '*' key to match any domain, null value to remove the domain.
- *
- * @api private
- */
-common.rewriteCookieProperty = function rewriteCookieProperty(header, config, property) {
-  if (Array.isArray(header)) {
-    return header.map(function (headerElement) {
-      return rewriteCookieProperty(headerElement, config, property);
-    });
-  }
-  return header.replace(new RegExp("(;\\s*" + property + "=)([^;]+)", 'i'), function(match, prefix, previousValue) {
-    var newValue;
-    if (previousValue in config) {
-      newValue = config[previousValue];
-    } else if ('*' in config) {
-      newValue = config['*'];
-    } else {
-      //no match, return previous value
-      return match;
+  // base-matching: just use globstar for that.
+  if (options.matchBase && -1 === pattern.indexOf("/")) {
+    if (options.noglobstar) {
+      throw new Error("base matching requires globstar")
     }
-    if (newValue) {
-      //replace value
-      return prefix + newValue;
-    } else {
-      //remove value
-      return '';
-    }
-  });
-};
+    pattern = "**/" + pattern
+  }
 
-/**
- * Check the host and see if it potentially has a port in it (keep it simple)
- *
- * @returns {Boolean} Whether we have one or not
- *
- * @api private
- */
-function hasPort(host) {
-  return !!~host.indexOf(':');
-};
+  self.silent = !!options.silent
+  self.pattern = pattern
+  self.strict = options.strict !== false
+  self.realpath = !!options.realpath
+  self.realpathCache = options.realpathCache || Object.create(null)
+  self.follow = !!options.follow
+  self.dot = !!options.dot
+  self.mark = !!options.mark
+  self.nodir = !!options.nodir
+  if (self.nodir)
+    self.mark = true
+  self.sync = !!options.sync
+  self.nounique = !!options.nounique
+  self.nonull = !!options.nonull
+  self.nosort = !!options.nosort
+  self.nocase = !!options.nocase
+  self.stat = !!options.stat
+  self.noprocess = !!options.noprocess
+  self.absolute = !!options.absolute
+  self.fs = options.fs || fs
+
+  self.maxLength = options.maxLength || Infinity
+  self.cache = options.cache || Object.create(null)
+  self.statCache = options.statCache || Object.create(null)
+  self.symlinks = options.symlinks || Object.create(null)
+
+  setupIgnores(self, options)
+
+  self.changedCwd = false
+  var cwd = process.cwd()
+  if (!ownProp(options, "cwd"))
+    self.cwd = cwd
+  else {
+    self.cwd = path.resolve(options.cwd)
+    self.changedCwd = self.cwd !== cwd
+  }
+
+  self.root = options.root || path.resolve(self.cwd, "/")
+  self.root = path.resolve(self.root)
+  if (process.platform === "win32")
+    self.root = self.root.replace(/\\/g, "/")
+
+  // TODO: is an absolute `cwd` supposed to be resolved against `root`?
+  // e.g. { cwd: '/test', root: __dirname } === path.join(__dirname, '/test')
+  self.cwdAbs = isAbsolute(self.cwd) ? self.cwd : makeAbs(self, self.cwd)
+  if (process.platform === "win32")
+    self.cwdAbs = self.cwdAbs.replace(/\\/g, "/")
+  self.nomount = !!options.nomount
+
+  // disable comments and negation in Minimatch.
+  // Note that they are not supported in Glob itself anyway.
+  options.nonegate = true
+  options.nocomment = true
+  // always treat \ in patterns as escapes, not path separators
+  options.allowWindowsEscape = false
+
+  self.minimatch = new Minimatch(pattern, options)
+  self.options = self.minimatch.options
+}
+
+function finish (self) {
+  var nou = self.nounique
+  var all = nou ? [] : Object.create(null)
+
+  for (var i = 0, l = self.matches.length; i < l; i ++) {
+    var matches = self.matches[i]
+    if (!matches || Object.keys(matches).length === 0) {
+      if (self.nonull) {
+        // do like the shell, and spit out the literal glob
+        var literal = self.minimatch.globSet[i]
+        if (nou)
+          all.push(literal)
+        else
+          all[literal] = true
+      }
+    } else {
+      // had matches
+      var m = Object.keys(matches)
+      if (nou)
+        all.push.apply(all, m)
+      else
+        m.forEach(function (m) {
+          all[m] = true
+        })
+    }
+  }
+
+  if (!nou)
+    all = Object.keys(all)
+
+  if (!self.nosort)
+    all = all.sort(alphasort)
+
+  // at *some* point we statted all of these
+  if (self.mark) {
+    for (var i = 0; i < all.length; i++) {
+      all[i] = self._mark(all[i])
+    }
+    if (self.nodir) {
+      all = all.filter(function (e) {
+        var notDir = !(/\/$/.test(e))
+        var c = self.cache[e] || self.cache[makeAbs(self, e)]
+        if (notDir && c)
+          notDir = c !== 'DIR' && !Array.isArray(c)
+        return notDir
+      })
+    }
+  }
+
+  if (self.ignore.length)
+    all = all.filter(function(m) {
+      return !isIgnored(self, m)
+    })
+
+  self.found = all
+}
+
+function mark (self, p) {
+  var abs = makeAbs(self, p)
+  var c = self.cache[abs]
+  var m = p
+  if (c) {
+    var isDir = c === 'DIR' || Array.isArray(c)
+    var slash = p.slice(-1) === '/'
+
+    if (isDir && !slash)
+      m += '/'
+    else if (!isDir && slash)
+      m = m.slice(0, -1)
+
+    if (m !== p) {
+      var mabs = makeAbs(self, m)
+      self.statCache[mabs] = self.statCache[abs]
+      self.cache[mabs] = self.cache[abs]
+    }
+  }
+
+  return m
+}
+
+// lotta situps...
+function makeAbs (self, f) {
+  var abs = f
+  if (f.charAt(0) === '/') {
+    abs = path.join(self.root, f)
+  } else if (isAbsolute(f) || f === '') {
+    abs = f
+  } else if (self.changedCwd) {
+    abs = path.resolve(self.cwd, f)
+  } else {
+    abs = path.resolve(f)
+  }
+
+  if (process.platform === 'win32')
+    abs = abs.replace(/\\/g, '/')
+
+  return abs
+}
+
+
+// Return true, if pattern ends with globstar '**', for the accompanying parent directory.
+// Ex:- If node_modules/** is the pattern, add 'node_modules' to ignore list along with it's contents
+function isIgnored (self, path) {
+  if (!self.ignore.length)
+    return false
+
+  return self.ignore.some(function(item) {
+    return item.matcher.match(path) || !!(item.gmatcher && item.gmatcher.match(path))
+  })
+}
+
+function childrenIgnored (self, path) {
+  if (!self.ignore.length)
+    return false
+
+  return self.ignore.some(function(item) {
+    return !!(item.gmatcher && item.gmatcher.match(path))
+  })
+}

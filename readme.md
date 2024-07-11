@@ -1,70 +1,65 @@
-# has-flag [![Build Status](https://travis-ci.org/sindresorhus/has-flag.svg?branch=master)](https://travis-ci.org/sindresorhus/has-flag)
+# get-east-asian-width
 
-> Check if [`argv`](https://nodejs.org/docs/latest/api/process.html#process_process_argv) has a specific flag
+> Determine the [East Asian Width](https://unicode.org/reports/tr11/) of a Unicode character
 
-Correctly stops looking after an `--` argument terminator.
+> East Asian Width categorizes Unicode characters based on their occupied space in East Asian typography, which helps in text layout and alignment, particularly in languages like Japanese, Chinese, and Korean.
 
+Unlike other similar packages, this package uses the latest Unicode data (which changes each year).
 
 ## Install
 
+```sh
+npm install get-east-asian-width
 ```
-$ npm install has-flag
-```
-
 
 ## Usage
 
 ```js
-// foo.js
-const hasFlag = require('has-flag');
+import {eastAsianWidth, eastAsianWidthType} from 'get-east-asian-width';
 
-hasFlag('unicorn');
-//=> true
+const codePoint = '字'.codePointAt(0);
 
-hasFlag('--unicorn');
-//=> true
+console.log(eastAsianWidth(codePoint));
+//=> 2
 
-hasFlag('f');
-//=> true
-
-hasFlag('-f');
-//=> true
-
-hasFlag('foo=bar');
-//=> true
-
-hasFlag('foo');
-//=> false
-
-hasFlag('rainbow');
-//=> false
+console.log(eastAsianWidthType(codePoint));
+//=> 'wide'
 ```
 
+## `eastAsianWidth(codePoint: number, options?: object): 1 | 2`
+
+Returns the width as a number for the given code point.
+
+### options
+
+Type: `object`
+
+#### ambiguousAsWide
+
+Type: `boolean`\
+Default: `false`
+
+Whether to treat an `'ambiguous'` character as wide.
+
+```js
+import {eastAsianWidth} from 'get-east-asian-width';
+
+const codePoint = '⛣'.codePointAt(0);
+
+console.log(eastAsianWidth(codePoint));
+//=> 1
+
+console.log(eastAsianWidth(codePoint, {ambiguousAsWide: true}));
+//=> 2
 ```
-$ node foo.js -f --unicorn --foo=bar -- --rainbow
-```
 
+> Ambiguous characters behave like wide or narrow characters depending on the context (language tag, script identification, associated font, source of data, or explicit markup; all can provide the context). **If the context cannot be established reliably, they should be treated as narrow characters by default.**
+> - http://www.unicode.org/reports/tr11/
 
-## API
+## `eastAsianWidthType(codePoint: number): 'fullwidth' | 'halfwidth' | 'wide' | 'narrow' | 'neutral' | 'ambiguous'`
 
-### hasFlag(flag, [argv])
+Returns the type of “East Asian Width” for the given code point.
 
-Returns a boolean for whether the flag exists.
+## Related
 
-#### flag
-
-Type: `string`
-
-CLI flag to look for. The `--` prefix is optional.
-
-#### argv
-
-Type: `string[]`<br>
-Default: `process.argv`
-
-CLI arguments.
-
-
-## License
-
-MIT © [Sindre Sorhus](https://sindresorhus.com)
+- [string-width](https://github.com/sindresorhus/string-width) - Get the visual width of a string
