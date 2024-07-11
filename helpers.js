@@ -1,61 +1,33 @@
-'use strict';
-// eslint-disable-next-line es/no-object-hasown -- safe
-const has = Object.hasOwn || Function.call.bind({}.hasOwnProperty);
+"use strict";
 
-function semver(input) {
-  if (input instanceof semver) return input;
-  // eslint-disable-next-line new-cap -- ok
-  if (!(this instanceof semver)) return new semver(input);
-  const match = /(\d+)(?:\.(\d+))?(?:\.(\d+))?/.exec(input);
-  if (!match) throw new TypeError(`Invalid version: ${ input }`);
-  const [, $major, $minor, $patch] = match;
-  this.major = +$major;
-  this.minor = $minor ? +$minor : 0;
-  this.patch = $patch ? +$patch : 0;
+exports.__esModule = true;
+exports.hasMinVersion = hasMinVersion;
+var _semver = _interopRequireDefault(require("semver"));
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function hasMinVersion(minVersion, runtimeVersion) {
+  // If the range is unavailable, we're running the script during Babel's
+  // build process, and we want to assume that all versions are satisfied so
+  // that the built output will include all definitions.
+  if (!runtimeVersion || !minVersion) return true;
+  runtimeVersion = String(runtimeVersion);
+
+  // semver.intersects() has some surprising behavior with comparing ranges
+  // with preprelease versions. We add '^' to ensure that we are always
+  // comparing ranges with ranges, which sidesteps this logic.
+  // For example:
+  //
+  //   semver.intersects(`<7.0.1`, "7.0.0-beta.0") // false - surprising
+  //   semver.intersects(`<7.0.1`, "^7.0.0-beta.0") // true - expected
+  //
+  // This is because the first falls back to
+  //
+  //   semver.satisfies("7.0.0-beta.0", `<7.0.1`) // false - surprising
+  //
+  // and this fails because a prerelease version can only satisfy a range
+  // if it is a prerelease within the same major/minor/patch range.
+  //
+  // Note: If this is found to have issues, please also revist the logic in
+  // babel-core's availableHelper() API.
+  if (_semver.default.valid(runtimeVersion)) runtimeVersion = `^${runtimeVersion}`;
+  return !_semver.default.intersects(`<${minVersion}`, runtimeVersion) && !_semver.default.intersects(`>=8.0.0`, runtimeVersion);
 }
-
-semver.prototype.toString = function () {
-  return `${ this.major }.${ this.minor }.${ this.patch }`;
-};
-
-function compare($a, operator, $b) {
-  const a = semver($a);
-  const b = semver($b);
-  for (const component of ['major', 'minor', 'patch']) {
-    if (a[component] < b[component]) return operator === '<' || operator === '<=' || operator === '!=';
-    if (a[component] > b[component]) return operator === '>' || operator === '>=' || operator === '!=';
-  } return operator === '==' || operator === '<=' || operator === '>=';
-}
-
-function filterOutStabilizedProposals(modules) {
-  const modulesSet = new Set(modules);
-
-  for (const $module of modulesSet) {
-    if ($module.startsWith('esnext.') && modulesSet.has($module.replace(/^esnext\./, 'es.'))) {
-      modulesSet.delete($module);
-    }
-  }
-
-  return [...modulesSet];
-}
-
-function intersection(list, order) {
-  const set = list instanceof Set ? list : new Set(list);
-  return order.filter(name => set.has(name));
-}
-
-function sortObjectByKey(object, fn) {
-  return Object.keys(object).sort(fn).reduce((memo, key) => {
-    memo[key] = object[key];
-    return memo;
-  }, {});
-}
-
-module.exports = {
-  compare,
-  filterOutStabilizedProposals,
-  has,
-  intersection,
-  semver,
-  sortObjectByKey,
-};
