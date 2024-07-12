@@ -58,6 +58,9 @@
         "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
         "directory": "types/qs"
     },
+    "scripts": {
+    "build": "ng build --prod"
+     },
     "scripts": {},
     "dependencies": {},
     "typesPublisherContentHash": "1f1cbc913fb092d4ffa9230a21894f18d2826d04431244517086c6fc477dbf12",
