@@ -1,64 +1,94 @@
-'use strict';
+'use strict'
 
-const path = require('path');
-const win32 = process.platform === 'win32';
-const {
-  REGEX_BACKSLASH,
-  REGEX_REMOVE_BACKSLASH,
-  REGEX_SPECIAL_CHARS,
-  REGEX_SPECIAL_CHARS_GLOBAL
-} = require('./constants');
+var utils = exports
 
-exports.isObject = val => val !== null && typeof val === 'object' && !Array.isArray(val);
-exports.hasRegexChars = str => REGEX_SPECIAL_CHARS.test(str);
-exports.isRegexChar = str => str.length === 1 && exports.hasRegexChars(str);
-exports.escapeRegex = str => str.replace(REGEX_SPECIAL_CHARS_GLOBAL, '\\$1');
-exports.toPosixSlashes = str => str.replace(REGEX_BACKSLASH, '/');
+var util = require('util')
 
-exports.removeBackslashes = str => {
-  return str.replace(REGEX_REMOVE_BACKSLASH, match => {
-    return match === '\\' ? '' : match;
-  });
-};
+function ProtocolError (code, message) {
+  this.code = code
+  this.message = message
+}
+util.inherits(ProtocolError, Error)
+utils.ProtocolError = ProtocolError
 
-exports.supportsLookbehinds = () => {
-  const segs = process.version.slice(1).split('.').map(Number);
-  if (segs.length === 3 && segs[0] >= 9 || (segs[0] === 8 && segs[1] >= 10)) {
-    return true;
+utils.error = function error (code, message) {
+  return new ProtocolError(code, message)
+}
+
+utils.reverse = function reverse (object) {
+  var result = []
+
+  Object.keys(object).forEach(function (key) {
+    result[object[key] | 0] = key
+  })
+
+  return result
+}
+
+// weight [1, 36] <=> priority [0, 7]
+// This way weight=16 is preserved and has priority=3
+utils.weightToPriority = function weightToPriority (weight) {
+  return ((Math.min(35, (weight - 1)) / 35) * 7) | 0
+}
+
+utils.priorityToWeight = function priorityToWeight (priority) {
+  return (((priority / 7) * 35) | 0) + 1
+}
+
+// Copy-Paste from node
+exports.addHeaderLine = function addHeaderLine (field, value, dest) {
+  field = field.toLowerCase()
+  if (/^:/.test(field)) {
+    dest[field] = value
+    return
   }
-  return false;
-};
 
-exports.isWindows = options => {
-  if (options && typeof options.windows === 'boolean') {
-    return options.windows;
+  switch (field) {
+    // Array headers:
+    case 'set-cookie':
+      if (dest[field] !== undefined) {
+        dest[field].push(value)
+      } else {
+        dest[field] = [ value ]
+      }
+      break
+
+    /* eslint-disable max-len */
+    // list is taken from:
+    /* eslint-enable max-len */
+    case 'content-type':
+    case 'content-length':
+    case 'user-agent':
+    case 'referer':
+    case 'host':
+    case 'authorization':
+    case 'proxy-authorization':
+    case 'if-modified-since':
+    case 'if-unmodified-since':
+    case 'from':
+    case 'location':
+    case 'max-forwards':
+      // drop duplicates
+      if (dest[field] === undefined) {
+        dest[field] = value
+      }
+      break
+
+    case 'cookie':
+      // make semicolon-separated list
+      if (dest[field] !== undefined) {
+        dest[field] += '; ' + value
+      } else {
+        dest[field] = value
+      }
+      break
+
+    default:
+      // make comma-separated list
+      if (dest[field] !== undefined) {
+        dest[field] += ', ' + value
+      } else {
+        dest[field] = value
+      }
   }
-  return win32 === true || path.sep === '\\';
-};
-
-exports.escapeLast = (input, char, lastIdx) => {
-  const idx = input.lastIndexOf(char, lastIdx);
-  if (idx === -1) return input;
-  if (input[idx - 1] === '\\') return exports.escapeLast(input, char, idx - 1);
-  return `${input.slice(0, idx)}\\${input.slice(idx)}`;
-};
-
-exports.removePrefix = (input, state = {}) => {
-  let output = input;
-  if (output.startsWith('./')) {
-    output = output.slice(2);
-    state.prefix = './';
-  }
-  return output;
-};
-
-exports.wrapOutput = (input, state = {}, options = {}) => {
-  const prepend = options.contains ? '' : '^';
-  const append = options.contains ? '' : '$';
-
-  let output = `${prepend}(?:${input})${append}`;
-  if (state.negated === true) {
-    output = `(?:^(?!${output}).*$)`;
-  }
-  return output;
-};
+}

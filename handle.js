@@ -1,263 +1,247 @@
+'use strict'
+
 var assert = require('assert')
+var thing = require('handle-thing')
+var httpDeceiver = require('http-deceiver')
 var util = require('util')
 
-var EventEmitter = require('events').EventEmitter
-var Buffer = require('buffer').Buffer
+function Handle (options, stream, socket) {
+  var state = {}
+  this._spdyState = state
 
-var Queue = require('./queue')
+  state.options = options || {}
 
-// Node.js version
-var match = /^v(\d+)\.(\d+)\./.exec(process.version)
-var version = match ? Number(match[1]) + Number('0.' + match[2]) : 11
-var onreadMode = version >= 11.1 ? 2 : 1
-var mode = 'modern'
-
-var setNRead
-if (onreadMode === 2) {
-  var sw = process.binding('stream_wrap')
-  setNRead = function (nread) {
-    sw.streamBaseState[sw.kReadBytesOrError] = nread
-  }
-}
-
-function Handle (stream, options) {
-  EventEmitter.call(this)
-
-  this._stream = stream
-  this._flowing = false
-  this._reading = false
-  this._options = options || {}
-
-  this.onread = null
-
-  // Pending requests
-  this.pending = new Queue()
-}
-util.inherits(Handle, EventEmitter)
-module.exports = Handle
-
-Handle.mode = mode
-
-Handle.create = function create (stream, options) {
-  return new Handle(stream, options)
-}
-
-Handle.prototype._onread = function _onread (nread, buffer) {
-  if (onreadMode === 1) {
-    this.onread(nread, buffer)
-  } else {
-    setNRead(nread)
-    this.onread(buffer)
-  }
-}
-
-Handle.prototype._queueReq = function _queueReq (type, req) {
-  return this.pending.append(type, req)
-}
-
-Handle.prototype._pendingList = function _pendingList () {
-  var list = []
-  while (!this.pending.isEmpty()) { list.push(this.pending.first().dequeue()) }
-  return list
-}
-
-Handle.prototype.setStream = function setStream (stream) {
-  assert(this._stream === null, 'Can\'t set stream two times')
-  this._stream = stream
-
-  this.emit('stream', stream)
-}
-
-Handle.prototype.readStart = function readStart () {
-  this._reading = true
-
-  if (!this._stream) {
-    this.once('stream', this.readStart)
-    return 0
-  }
-
-  if (!this._flowing) {
-    this._flowing = true
-    this._flow()
-  }
-
-  this._stream.resume()
-  return 0
-}
-
-Handle.prototype.readStop = function readStop () {
-  this._reading = false
-
-  if (!this._stream) {
-    this.once('stream', this.readStop)
-    return 0
-  }
-  this._stream.pause()
-  return 0
-}
-
-var uv = process.binding('uv')
-
-Handle.prototype._flow = function flow () {
-  var self = this
-  this._stream.on('data', function (chunk) {
-    self._onread(chunk.length, chunk)
-  })
-
-  this._stream.on('end', function () {
-    self._onread(uv.UV_EOF, Buffer.alloc(0))
-  })
-
-  this._stream.on('close', function () {
-    setImmediate(function () {
-      if (self._reading) {
-        self._onread(uv.UV_ECONNRESET, Buffer.alloc(0))
-      }
-    })
-  })
-}
-
-Handle.prototype._close = function _close () {
-  var list = this._pendingList()
+  state.stream = stream
+  state.socket = null
+  state.rawSocket = socket || stream.connection.socket
+  state.deceiver = null
+  state.ending = false
 
   var self = this
-  setImmediate(function () {
-    for (var i = 0; i < list.length; i++) {
-      var req = list[i]
-      req.oncomplete(uv.UV_ECANCELED, self, req)
+  thing.call(this, stream, {
+    getPeerName: function () {
+      return self._getPeerName()
+    },
+    close: function (callback) {
+      return self._closeCallback(callback)
     }
   })
 
-  this.readStop()
-}
-
-Handle.prototype.shutdown = function shutdown (req) {
-  var wrap = this._queueReq('shutdown', req)
-
-  if (!this._stream) {
-    this.once('stream', function () {
-      this._shutdown(wrap)
+  if (!state.stream) {
+    this.on('stream', function (stream) {
+      state.stream = stream
     })
-    return 0
+  }
+}
+util.inherits(Handle, thing)
+module.exports = Handle
+
+Handle.create = function create (options, stream, socket) {
+  return new Handle(options, stream, socket)
+}
+
+Handle.prototype._getPeerName = function _getPeerName () {
+  var state = this._spdyState
+
+  if (state.rawSocket._getpeername) {
+    return state.rawSocket._getpeername()
   }
 
-  return this._shutdown(wrap)
-}
-
-Handle.prototype._shutdown = function _shutdown (wrap) {
-  var self = this
-  this._stream.end(function () {
-    var req = wrap.dequeue()
-    if (!req) { return }
-
-    req.oncomplete(0, self, req)
-  })
-  return 0
-}
-
-Handle.prototype.close = function close (callback) {
-  this._close()
-
-  if (!this._stream) {
-    this.once('stream', function () {
-      this.close(callback)
-    })
-    return 0
-  }
-
-  if (this._options.close) {
-    this._options.close(callback)
-  } else {
-    process.nextTick(callback)
-  }
-
-  return 0
-}
-
-Handle.prototype.writeEnc = function writeEnc (req, data, enc) {
-  var wrap = this._queueReq('write', req)
-
-  if (!this._stream) {
-    this.once('stream', function () {
-      this._writeEnc(wrap, req, data, enc)
-    })
-
-    return 0
-  }
-
-  return this._writeEnc(wrap, req, data, enc)
-}
-
-Handle.prototype._writeEnc = function _writeEnc (wrap, req, data, enc) {
-  var self = this
-
-  req.async = true
-  req.bytes = data.length
-
-  if (wrap.isEmpty()) {
-    return 0
-  }
-
-  this._stream.write(data, enc, function () {
-    var req = wrap.dequeue()
-    if (!req) { return }
-    req.oncomplete(0, self, req)
-  })
-
-  return 0
-}
-
-/**
- * @param {WriteWrap} req
- * @param {string[]} chunks
- * @param {Boolean} allBuffers
- */
-Handle.prototype.writev = function _writev (req, chunks, allBuffers) {
-  while (chunks.length > 0) {
-    this._stream.write(chunks.shift(), chunks.shift())
-  }
-  return 0
-}
-
-Handle.prototype.writeBuffer = function writeBuffer (req, data) {
-  return this.writeEnc(req, data, null)
-}
-
-Handle.prototype.writeAsciiString = function writeAsciiString (req, data) {
-  return this.writeEnc(req, data, 'ascii')
-}
-
-Handle.prototype.writeUtf8String = function writeUtf8String (req, data) {
-  return this.writeEnc(req, data, 'utf8')
-}
-
-Handle.prototype.writeUcs2String = function writeUcs2String (req, data) {
-  return this.writeEnc(req, data, 'ucs2')
-}
-
-Handle.prototype.writeBinaryString = function writeBinaryString (req, data) {
-  return this.writeEnc(req, data, 'binary')
-}
-
-Handle.prototype.writeLatin1String = function writeLatin1String (req, data) {
-  return this.writeEnc(req, data, 'binary')
-}
-
-// v0.8
-Handle.prototype.getsockname = function getsockname () {
-  if (this._options.getPeerName) {
-    return this._options.getPeerName()
-  }
   return null
 }
 
-Handle.prototype.getpeername = function getpeername (out) {
-  var res = this.getsockname()
-  if (!res) { return -1 }
+Handle.prototype._closeCallback = function _closeCallback (callback) {
+  var state = this._spdyState
+  var stream = state.stream
 
-  Object.keys(res).forEach(function (key) {
-    out[key] = res[key]
+  if (state.ending) {
+    // The .end() method of the stream may be called by us or by the
+    // .shutdown() method in our super-class. If the latter has already been
+    // called, then calling the .end() method below will have no effect, with
+    // the result that the callback will never get executed, leading to an ever
+    // so subtle memory leak.
+    if (stream._writableState.finished) {
+      // NOTE: it is important to call `setImmediate` instead of `nextTick`,
+      // since this is how regular `handle.close()` works in node.js core.
+      //
+      // Using `nextTick` will lead to `net.Socket` emitting `close` before
+      // `end` on UV_EOF. This results in aborted request without `end` event.
+      setImmediate(callback)
+    } else if (stream._writableState.ending) {
+      stream.once('finish', function () {
+        callback(null)
+      })
+    } else {
+      stream.end(callback)
+    }
+  } else {
+    stream.abort(callback)
+  }
+
+  // Only a single end is allowed
+  state.ending = false
+}
+
+Handle.prototype.getStream = function getStream (callback) {
+  var state = this._spdyState
+
+  if (!callback) {
+    assert(state.stream)
+    return state.stream
+  }
+
+  if (state.stream) {
+    process.nextTick(function () {
+      callback(state.stream)
+    })
+    return
+  }
+
+  this.on('stream', callback)
+}
+
+Handle.prototype.assignSocket = function assignSocket (socket, options) {
+  var state = this._spdyState
+
+  state.socket = socket
+  state.deceiver = httpDeceiver.create(socket, options)
+
+  function onStreamError (err) {
+    state.socket.emit('error', err)
+  }
+
+  this.getStream(function (stream) {
+    stream.on('error', onStreamError)
   })
+}
 
-  return 0
+Handle.prototype.assignClientRequest = function assignClientRequest (req) {
+  var state = this._spdyState
+  var oldEnd = req.end
+  var oldSend = req._send
+
+  // Catch the headers before request will be sent
+  var self = this
+
+  // For old nodes
+  if (thing.mode !== 'modern') {
+    req.end = function end () {
+      this.end = oldEnd
+
+      this._send('')
+
+      return this.end.apply(this, arguments)
+    }
+  }
+
+  req._send = function send (data) {
+    this._headerSent = true
+
+    // for v0.10 and below, otherwise it will set `hot = false` and include
+    // headers in first write
+    this._header = 'ignore me'
+
+    // To prevent exception
+    this.connection = state.socket
+
+    // It is very important to leave this here, otherwise it will be executed
+    // on a next tick, after `_send` will perform write
+    self.getStream(function (stream) {
+      if (!stream.connection._isGoaway(stream.id)) {
+        stream.send()
+      }
+    })
+
+    // We are ready to create stream
+    self.emit('needStream')
+
+    // Ensure that the connection is still ok to use
+    if (state.stream && state.stream.connection._isGoaway(state.stream.id)) {
+      return
+    }
+
+    req._send = oldSend
+
+    // Ignore empty writes
+    if (req.method === 'GET' && data.length === 0) {
+      return
+    }
+
+    return req._send.apply(this, arguments)
+  }
+
+  // No chunked encoding
+  req.useChunkedEncodingByDefault = false
+
+  req.on('finish', function () {
+    req.socket.end()
+  })
+}
+
+Handle.prototype.assignRequest = function assignRequest (req) {
+  // Emit trailing headers
+  this.getStream(function (stream) {
+    stream.on('headers', function (headers) {
+      req.emit('trailers', headers)
+    })
+  })
+}
+
+Handle.prototype.assignResponse = function assignResponse (res) {
+  var self = this
+
+  res.addTrailers = function addTrailers (headers) {
+    self.getStream(function (stream) {
+      stream.sendHeaders(headers)
+    })
+  }
+}
+
+Handle.prototype._transformHeaders = function _transformHeaders (kind, headers) {
+  var state = this._spdyState
+
+  var res = {}
+  var keys = Object.keys(headers)
+
+  if (kind === 'request' && state.options['x-forwarded-for']) {
+    var xforwarded = state.stream.connection.getXForwardedFor()
+    if (xforwarded !== null) {
+      res['x-forwarded-for'] = xforwarded
+    }
+  }
+
+  for (var i = 0; i < keys.length; i++) {
+    var key = keys[i]
+    var value = headers[key]
+
+    if (key === ':authority') {
+      res.host = value
+    }
+    if (/^:/.test(key)) {
+      continue
+    }
+
+    res[key] = value
+  }
+  return res
+}
+
+Handle.prototype.emitRequest = function emitRequest () {
+  var state = this._spdyState
+  var stream = state.stream
+
+  state.deceiver.emitRequest({
+    method: stream.method,
+    path: stream.path,
+    headers: this._transformHeaders('request', stream.headers)
+  })
+}
+
+Handle.prototype.emitResponse = function emitResponse (status, headers) {
+  var state = this._spdyState
+
+  state.deceiver.emitResponse({
+    status: status,
+    headers: this._transformHeaders('response', headers)
+  })
 }
