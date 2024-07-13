@@ -1,10 +1,3 @@
-export {
-  Server,
-  Socket,
-  Transport,
-  transports,
-  listen,
-  attach,
-  parser,
-  protocol,
-} from "./build/engine.io.js";
+import io from "./dist/index.js";
+
+export const {Server, Namespace, Socket} = io;
